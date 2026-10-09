@@ -1,14 +1,4 @@
-import {
-  ArrowDown,
-  ArrowRight,
-  BookOpen,
-  Compass,
-  Leaf,
-  MapPinned,
-  ShieldCheck,
-  Sparkles,
-  Trophy,
-} from "lucide-react";
+import { ArrowRight, Compass, Flag, Gamepad2, MapPinned, Play, Puzzle, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import Logo from "../components/Logo";
 import { useAuth } from "../context/AuthContext";
@@ -24,8 +14,9 @@ export default function Home() {
           <Logo />
         </Link>
         <nav aria-label="Navegação principal">
-          <a href="#historia">A história</a>
-          <a href="#como-jogar">Como jogar</a>
+          <span className="landing-game-label">
+            <Gamepad2 size={17} aria-hidden="true" /> Uma aventura de descobertas
+          </span>
           {user ? (
             <Link className="button button--small button--dark" to="/aventura">
               Meu mapa <ArrowRight size={16} />
@@ -40,7 +31,7 @@ export default function Home() {
       <section className="landing-hero container">
         <div className="landing-copy">
           <span className="eyebrow">
-            <span className="status-dot" /> A CURIOSIDADE TEM UM NOVO DESTINO
+            <span className="status-dot" /> SUA PRÓXIMA AVENTURA COMEÇA AQUI
           </span>
           <h1>
             Todo lugar
@@ -53,12 +44,12 @@ export default function Home() {
           </p>
           <div className="landing-actions">
             <Link className="button button--primary" to={destination}>
+              <span className="landing-play" aria-hidden="true">
+                <Play size={11} fill="currentColor" strokeWidth={0} />
+              </span>
               {user ? "Continuar minha jornada" : "Começar minha aventura"}
               <ArrowRight size={18} />
             </Link>
-            <a className="quiet-link" href="#como-jogar">
-              Conhecer a jornada <ArrowDown size={15} />
-            </a>
           </div>
           <div className="hero-details">
             <span>
@@ -67,12 +58,12 @@ export default function Home() {
             </span>
             <i />
             <span>
-              <PuzzleMark />
+              <Puzzle size={17} />
               <strong>6</strong> desafios
             </span>
             <i />
             <span>
-              <Leaf size={17} /> infinitas descobertas
+              <Trophy size={17} /> conquistas
             </span>
           </div>
         </div>
@@ -83,129 +74,51 @@ export default function Home() {
             fetchPriority="high"
           />
           <div className="visual-vignette" />
+          <div className="landing-trail" aria-hidden="true">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              <path
+                className="trail-shadow"
+                d="M 22 57 C 16 48, 34 50, 40 40 S 48 29, 61 22"
+                vectorEffect="non-scaling-stroke"
+              />
+              <path
+                className="trail-line"
+                d="M 22 57 C 16 48, 34 50, 40 40 S 48 29, 61 22"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+            <span className="trail-point trail-point--start">
+              <Flag size={17} fill="currentColor" />
+              <small>INÍCIO</small>
+            </span>
+            <span className="trail-point trail-point--second">02</span>
+            <span className="trail-point trail-point--third">03</span>
+          </div>
           <span className="image-coordinate">
             VALE DE TUTTI-FRUTTI
             <br />
             <small>O INÍCIO DE UMA GRANDE HISTÓRIA</small>
           </span>
-          <div className="floating-destination">
-            <span>
+          <Link className="floating-destination" to={destination}>
+            <span aria-hidden="true">
               <Compass size={26} />
             </span>
             <div>
-              <small>SEU PRIMEIRO DESTINO</small>
+              <small>{user ? "O VALE ESPERA POR VOCÊ" : "MISSÃO 01 · OBSERVAÇÃO"}</small>
               <strong>O portão do pomar</strong>
-              <p>A primeira pista está esperando.</p>
+              <p>
+                {user ? "Voltar ao meu mapa" : "Encontre a primeira pista"} <ArrowRight size={12} />
+              </p>
             </div>
-            <ArrowRight size={18} />
-          </div>
-          <div className="image-tag">
-            <Sparkles size={15} /> Um mundo para descobrir
-          </div>
-        </div>
-      </section>
-      <div className="landing-divider container">
-        <span>DESACELERE. OBSERVE. DESCUBRA.</span>
-        <div />
-        <Compass size={20} />
-      </div>
-      <section className="how-section container" id="como-jogar">
-        <div className="section-intro">
-          <div>
-            <span className="eyebrow">SIMPLES DE COMEÇAR. DIFÍCIL DE ESQUECER.</span>
-            <h2>
-              O caminho é seu.
-              <br />
-              <em>A descoberta também.</em>
-            </h2>
-          </div>
-          <p>
-            Um mapa interativo, pequenas pistas e uma vontade enorme de descobrir o que vem depois.
-          </p>
-        </div>
-        <div className="how-grid">
-          {[
-            [
-              MapPinned,
-              "01",
-              "Encontre seu caminho",
-              "Explore o mapa do vale. Cada lugar tem uma história e um desafio esperando por você.",
-            ],
-            [
-              BookOpen,
-              "02",
-              "Dê vida às pistas",
-              "Resolva enigmas, teste sua memória e use a lógica para encontrar os fragmentos perdidos.",
-            ],
-            [
-              Trophy,
-              "03",
-              "Reconstrua o segredo",
-              "Guarde suas descobertas no diário e reúna os seis fragmentos para revelar o coração do vale.",
-            ],
-          ].map(([Icon, number, title, text]) => (
-            <article className="how-card" key={number}>
-              <div className="how-card-top">
-                <Icon size={26} strokeWidth={1.5} />
-                <span>{number}</span>
-              </div>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-      <section className="story-section container" id="historia">
-        <div className="story-illustration">
-          <img
-            src="/imagens/tutti-frutti-map.png"
-            alt="Mapa aéreo dos seis destinos do vale"
-            loading="lazy"
-          />
-          <span className="story-seal">
-            <Compass size={32} />
-            <small>
-              EXPLORE
-              <br />O EXTRAORDINÁRIO
-            </small>
-          </span>
-        </div>
-        <div className="story-copy">
-          <span className="eyebrow">UMA CARTA DO VALE</span>
-          <h2>
-            Algumas histórias
-            <br />
-            precisam de você
-            <br />
-            para <em>continuar.</em>
-          </h2>
-          <p>
-            Há muito tempo, seis lugares guardavam a memória de Tutti-Frutti. Agora, seus fragmentos
-            estão espalhados pelo vale. E existe um mapa que só revela seus caminhos a quem está
-            disposto a olhar com atenção.
-          </p>
-          <p className="story-note">A próxima página ainda está em branco.</p>
-          <Link className="button button--dark" to={destination}>
-            Escrever minha história <ArrowRight size={17} />
+            <span className="destination-number" aria-hidden="true">
+              01
+            </span>
           </Link>
+          <div className="image-tag">
+            <MapPinned size={15} /> Mapa de aventura
+          </div>
         </div>
       </section>
-      <section className="landing-callout container">
-        <span>
-          <ShieldCheck size={18} /> Sua jornada fica salva na sua conta.
-        </span>
-        <Link to={destination}>
-          O vale espera por você <ArrowRight size={17} />
-        </Link>
-      </section>
-      <footer className="landing-footer container">
-        <Logo compact />
-        <p>Feito para quem nunca perdeu a curiosidade.</p>
-        <small>© 2026 · Segredos de Tutti-Frutti</small>
-      </footer>
     </main>
   );
-}
-function PuzzleMark() {
-  return <Sparkles size={17} />;
 }
