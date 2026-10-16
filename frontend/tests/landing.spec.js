@@ -21,7 +21,7 @@ test("entrada com visual de jogo permanece em uma única tela", async ({ page },
     [568, 320],
   ]) {
     await page.setViewportSize({ width, height });
-    await expect(page.getByRole("heading", { name: /Todo lugar/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Um segredo/ })).toBeVisible();
     const layout = await page.evaluate(() => {
       const viewport = { width: window.innerWidth, height: window.innerHeight };
       const fits = (selector) => {
@@ -66,18 +66,18 @@ test("entrada com visual de jogo permanece em uma única tela", async ({ page },
   expect(errors).toEqual([]);
 });
 
-test("convites da entrada levam ao cadastro e ao login", async ({ page }) => {
+test("convites da entrada levam direto à investigação", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("link", { name: /Começar minha aventura/ }).click();
-  await expect(page).toHaveURL(/\/cadastro$/);
-  await expect(page.getByRole("button", { name: "Criar conta e explorar" })).toBeVisible();
+  await page.getByRole("link", { name: /Começar investigação/ }).click();
+  await expect(page).toHaveURL(/\/aventura$/);
+  await expect(page.getByRole("button", { name: "Explorar destino", exact: true })).toBeVisible();
 
   await page.goto("/");
   await page.getByRole("link", { name: /MISSÃO 01/ }).click();
-  await expect(page).toHaveURL(/\/cadastro$/);
+  await expect(page).toHaveURL(/\/aventura$/);
 
   await page.goto("/");
-  await page.getByRole("link", { name: /^Entrar/ }).click();
-  await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole("button", { name: "Entrar na aventura" })).toBeVisible();
+  await page.getByRole("link", { name: /^Jogar agora/ }).click();
+  await expect(page).toHaveURL(/\/aventura$/);
+  await expect(page.getByRole("button", { name: "Explorar destino", exact: true })).toBeVisible();
 });

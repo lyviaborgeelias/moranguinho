@@ -30,6 +30,18 @@ def tokens_for(user):
     return {"access": str(refresh.access_token), "refresh": str(refresh), "user": user_payload(user)}
 
 
+def guest_user(request):
+    guest_id = request.headers.get("X-Guest-ID", "")
+    if not isinstance(guest_id, str) or len(guest_id) > 80 or not guest_id.strip():
+        guest_id = uuid.uuid4().hex
+    username = f"guest_{guest_id.strip().replace('-', '')[:64]}"
+    user, _ = User.objects.get_or_create(
+        username=username,
+        defaults={"first_name": "Explorador", "email": f"{username}@local.invalid"},
+    )
+    return user
+
+
 def journey_payload(user):
     journey, _ = Journey.objects.get_or_create(user=user)
     records = list(ActivityProgress.objects.filter(user=user))
@@ -99,18 +111,20 @@ class LoginEmailView(PublicView):
 
 
 class MeView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get(self, request):
-        return Response({"user": user_payload(request.user)})
+        return Response({"user": user_payload(guest_user(request))})
 
     def patch(self, request):
         name = request.data.get("name")
         if not isinstance(name, str) or not 1 <= len(name.strip()) <= 150:
             return Response({"erro": "Informe um nome de até 150 caracteres."}, status=400)
-        request.user.first_name = name.strip()
-        request.user.save(update_fields=["first_name"])
-        return Response({"user": user_payload(request.user)})
+        user = guest_user(request)
+        user.first_name = name.strip()
+        user.save(update_fields=["first_name"])
+        return Response({"user": user_payload(user)})
 
 
 class ChangePasswordView(APIView):
@@ -170,35 +184,39 @@ class PasswordResetConfirmView(PublicView):
 
 
 class JourneyView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def get(self, request):
-        return Response(journey_payload(request.user))
+        return Response(journey_payload(guest_user(request)))
 
     def delete(self, request):
         if request.data.get("confirm") is not True:
             return Response({"erro": "Confirme que deseja reiniciar a jornada."}, status=400)
         with transaction.atomic():
-            ActivityProgress.objects.filter(user=request.user).delete()
-            Journey.objects.update_or_create(user=request.user, defaults={"started_at": timezone.now()})
-        return Response(journey_payload(request.user))
+            user = guest_user(request)
+            ActivityProgress.objects.filter(user=user).delete()
+            Journey.objects.update_or_create(user=user, defaults={"started_at": timezone.now()})
+        return Response(journey_payload(user))
 
 
 class ActivityAnswerView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request, activity_id):
         activity = next((item for item in ACTIVITIES if item["id"] == activity_id), None)
         if not activity:
             return Response({"erro": "Destino não encontrado."}, status=404)
+        user = guest_user(request)
         with transaction.atomic():
             # Lock the journey so concurrent submissions cannot award duplicate completion.
-            Journey.objects.get_or_create(user=request.user)
-            Journey.objects.select_for_update().get(user=request.user)
-            completed = set(ActivityProgress.objects.filter(user=request.user, completed_at__isnull=False).values_list("activity_id", flat=True))
+            Journey.objects.get_or_create(user=user)
+            Journey.objects.select_for_update().get(user=user)
+            completed = set(ActivityProgress.objects.filter(user=user, completed_at__isnull=False).values_list("activity_id", flat=True))
             if activity_id > 1 and activity_id - 1 not in completed:
                 return Response({"erro": "Conclua o destino anterior para desbloquear esta atividade."}, status=403)
-            record, _ = ActivityProgress.objects.get_or_create(user=request.user, activity_id=activity_id)
+            record, _ = ActivityProgress.objects.get_or_create(user=user, activity_id=activity_id)
             already_completed = bool(record.completed_at)
             correct = correct_answer(activity, request.data.get("answer"))
             if not already_completed:
@@ -206,7 +224,7 @@ class ActivityAnswerView(APIView):
                 if correct:
                     record.completed_at = timezone.now()
                 record.save()
-        return Response({"correct": correct, "already_completed": already_completed, "fragment": activity["fragment"] if correct else None, "journey": journey_payload(request.user)})
+        return Response({"correct": correct, "already_completed": already_completed, "fragment": activity["fragment"] if correct else None, "journey": journey_payload(user)})
 
 
 class HealthView(PublicView):

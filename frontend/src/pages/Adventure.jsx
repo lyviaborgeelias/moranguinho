@@ -10,14 +10,12 @@ import {
   HelpCircle,
   Leaf,
   LockKeyhole,
-  LogOut,
   MapPinned,
   MoveHorizontal,
   Minus,
   Plus,
   RotateCcw,
   Settings2,
-  ShieldCheck,
   Sparkles,
   Trophy,
 } from "lucide-react";
@@ -25,46 +23,32 @@ import { Link, useSearchParams } from "react-router-dom";
 import Logo from "../components/Logo";
 import Modal from "../components/Modal";
 import Challenge from "../components/Challenge";
-import { PasswordField } from "../components/AuthForm";
 import { useAuth } from "../context/AuthContext";
 import { achievements, destinationIcons } from "../data/activities";
 import api, { errorMessage } from "../services/api";
-import { saveAuth } from "../services/auth";
 import "../styles/Adventure.css";
 
 const views = [
-  { id: "map", label: "Mapa do vale", icon: MapPinned },
+  { id: "map", label: "Mapa do jardim", icon: MapPinned },
   { id: "journal", label: "Meu diário", icon: BookOpen },
   { id: "achievements", label: "Conquistas", icon: Trophy },
   { id: "profile", label: "Meu perfil", icon: Settings2 },
 ];
 
-function Profile({ user, updateUser, logout }) {
+function Profile({ user, updateUser }) {
   const [name, setName] = useState(user.name);
-  const [passwords, setPasswords] = useState({
-    current_password: "",
-    password: "",
-    password_confirmation: "",
-  });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
-  async function save(event, changePassword = false) {
+  async function save(event) {
     event.preventDefault();
     setBusy(true);
     setNotice(null);
     try {
-      if (changePassword) {
-        const { data } = await api.post("/password/change/", passwords);
-        const remember = Boolean(localStorage.getItem("accessToken"));
-        saveAuth(data.access, data.refresh, data.user, remember);
-        setPasswords({ current_password: "", password: "", password_confirmation: "" });
-      } else {
-        const { data } = await api.patch("/me/", { name });
-        updateUser(data.user);
-      }
+      const { data } = await api.patch("/me/", { name });
+      updateUser(data.user);
       setNotice({
         type: "success",
-        text: changePassword ? "Sua senha foi atualizada." : "Seu nome foi atualizado.",
+        text: "Seu nome foi atualizado.",
       });
     } catch (error) {
       setNotice({ type: "error", text: errorMessage(error) });
@@ -72,8 +56,6 @@ function Profile({ user, updateUser, logout }) {
       setBusy(false);
     }
   }
-  const change = (event) =>
-    setPasswords((current) => ({ ...current, [event.target.name]: event.target.value }));
   return (
     <div className="profile-layout">
       <article className="paper-card">
@@ -103,43 +85,12 @@ function Profile({ user, updateUser, logout }) {
           </button>
         </form>
       </article>
-      <article className="paper-card">
-        <span className="eyebrow">SEGURANÇA DA CONTA</span>
-        <h2>Uma nova senha.</h2>
-        <form onSubmit={(event) => save(event, true)}>
-          <PasswordField
-            label="Senha atual"
-            name="current_password"
-            value={passwords.current_password}
-            onChange={change}
-          />
-          <PasswordField
-            label="Nova senha"
-            value={passwords.password}
-            onChange={change}
-            newPassword
-          />
-          <PasswordField
-            label="Confirme a nova senha"
-            name="password_confirmation"
-            value={passwords.password_confirmation}
-            onChange={change}
-            newPassword
-          />
-          <button className="button button--dark" disabled={busy}>
-            Atualizar senha <ShieldCheck size={16} />
-          </button>
-        </form>
-      </article>
       <article className="profile-session paper-card">
-        <LogOut size={21} />
+        <Compass size={21} />
         <div>
-          <strong>Uma pausa na aventura?</strong>
-          <p>Seu progresso fica guardado para a próxima visita.</p>
+          <strong>Jornada salva neste dispositivo</strong>
+          <p>Seu progresso fica guardado automaticamente enquanto você joga por aqui.</p>
         </div>
-        <button className="button button--outline" onClick={logout}>
-          Encerrar sessão <ArrowRight size={16} />
-        </button>
       </article>
       {notice && (
         <div className={`notice notice--${notice.type} profile-notice`} role="status">
@@ -151,7 +102,7 @@ function Profile({ user, updateUser, logout }) {
 }
 
 export default function Adventure() {
-  const { user, logout, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const [params, setParams] = useSearchParams();
   const view = views.some((item) => item.id === params.get("aba")) ? params.get("aba") : "map";
   const [journey, setJourney] = useState(null);
@@ -242,22 +193,20 @@ export default function Adventure() {
             <br />
             <em>pequenos passos.</em>
           </p>
-          <small>— Diário de Tutti-Frutti</small>
+          <small>— Diário da Moranguinho</small>
         </div>
         <div className="sidebar-bottom">
           <button onClick={() => setInfo(true)}>
             <HelpCircle size={16} /> Como explorar
           </button>
-          <button onClick={logout}>
-            <LogOut size={16} /> Sair da conta
-          </button>
+          <span className="sidebar-local-note">Jornada local · salva automaticamente</span>
           <span>UM CONVITE À CURIOSIDADE · 2026</span>
         </div>
       </aside>
       <div className="app-main">
         <header className="app-topbar">
           <span>
-            <Compass size={16} /> Seu vale <ChevronRight size={13} />
+            <Compass size={16} /> Jardim da Moranguinho <ChevronRight size={13} />
             <strong>{views.find((item) => item.id === view).label}</strong>
           </span>
           <div className="topbar-account">
@@ -278,12 +227,12 @@ export default function Adventure() {
           <div className="dashboard-heading">
             <div>
               <span className="eyebrow">
-                {view === "map" ? "A PRÓXIMA DESCOBERTA É SUA" : "CADA DESCOBERTA CONTA"}
+                {view === "map" ? "DOSSIÊ ABERTO · O CASO DO JARDIM" : "CADA PISTA CONTA"}
               </span>
               <h1>
                 {view === "map" ? (
                   <>
-                    Seu mapa. <em>Sua aventura.</em>
+                    Seu dossiê. <em>Seu mistério.</em>
                   </>
                 ) : view === "journal" ? (
                   <>
@@ -295,22 +244,22 @@ export default function Adventure() {
                   </>
                 ) : (
                   <>
-                    Seu espaço no <em>vale.</em>
+                    Seu espaço no <em>jardim.</em>
                   </>
                 )}
               </h1>
               <p>
                 {view === "map"
-                  ? `Olá, ${user.name.split(" ")[0]}! O vale tem histórias esperando por você.`
+                  ? `Olá, ${user.name.split(" ")[0]}! O jardim tem histórias esperando por você.`
                   : view === "journal"
-                    ? "Os fragmentos que você encontrou ficam guardados aqui."
+                    ? "As mensagens que você encontrou ficam guardadas aqui."
                     : view === "achievements"
                       ? "Cada destino explorado deixa uma marca na sua história."
-                      : "Atualize seu nome e cuide da segurança da sua conta."}
+                      : "Escolha como você quer ser chamado nesta aventura."}
               </p>
             </div>
             <span className="chapter-label">
-              <span>JORNADA PRINCIPAL</span>
+              <span>CASO PRINCIPAL</span>
               <strong>01 — 06</strong>
             </span>
           </div>
@@ -324,19 +273,55 @@ export default function Adventure() {
           )}
           {busy && !journey ? (
             <div className="content-loading">
-              <span className="spinner" /> Abrindo o mapa do vale…
+              <span className="spinner" /> Abrindo o mapa da Moranguinho…
             </div>
           ) : (
             journey && (
               <>
                 {view === "map" && (
                   <>
+                    <section className="case-progress" aria-label="Fases da investigação">
+                      <div>
+                        <span className="eyebrow">O LIVRO DESAPARECIDO</span>
+                        <h2>
+                          {complete
+                            ? "Mistério resolvido!"
+                            : `Fase ${journey.completed.length + 1} de 6`}
+                        </h2>
+                        <p>
+                          {complete
+                            ? "As amigas deixaram uma surpresa no cofre. Você venceu todos os obstáculos!"
+                            : "Recupere o livro de receitas da Moranguinho. Cada vitória abre uma nova parte do jardim."}
+                        </p>
+                      </div>
+                      <div className="phase-track">
+                        {journey.activities.map((activity) => (
+                          <button
+                            type="button"
+                            key={activity.id}
+                            className={`phase-step phase-${activity.status}`}
+                            disabled={activity.status === "locked"}
+                            onClick={() => open(activity)}
+                            aria-label={`Fase ${activity.id}: ${activity.title}`}
+                            aria-current={activity.status === "available" ? "step" : undefined}
+                          >
+                            {activity.status === "completed" ? (
+                              <Check size={17} />
+                            ) : activity.status === "locked" ? (
+                              <LockIcon size={15} />
+                            ) : (
+                              activity.id
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </section>
                     <div className="dashboard-grid">
                       <section className="map-card">
                         <div className="map-card-heading">
                           <div>
                             <MapPinned size={17} />
-                            <strong>Vale de Tutti-Frutti</strong>
+                            <strong>Jardim da Moranguinho</strong>
                             <span>MAPA DE EXPLORAÇÃO</span>
                           </div>
                           <button
@@ -355,7 +340,7 @@ export default function Adventure() {
                           <div className="map-canvas" style={{ width: `${zoom * 100}%` }}>
                             <img
                               src="/imagens/tutti-frutti-map.png"
-                              alt="Mapa do vale com o pomar, bosque, lago, torre, biblioteca e grande árvore"
+                              alt="Mapa do jardim da Moranguinho com a casa, a praça, o pomar e a casa da árvore"
                               draggable="false"
                             />
                             <svg
@@ -393,7 +378,7 @@ export default function Adventure() {
                               );
                             })}
                             <div className="map-coordinates">
-                              TUTTI-FRUTTI
+                              CASO DO JARDIM
                               <br />
                               <span>CARTOGRAFIA DO EXTRAORDINÁRIO</span>
                             </div>
@@ -448,12 +433,8 @@ export default function Adventure() {
                           <span className="quest-large-icon">
                             {complete ? <Trophy size={30} /> : <Compass size={30} />}
                           </span>
-                          <h2>{next ? next.title : "O vale voltou a florescer."}</h2>
-                          <p>
-                            {next
-                              ? next.story
-                              : "Os seis fragmentos estão reunidos. A memória do vale vive de novo, graças à sua curiosidade."}
-                          </p>
+                          <h2>{next ? next.title : "O livro foi encontrado!"}</h2>
+                          <p>{next ? next.story : journey.activities[5].revelation}</p>
                           {next ? (
                             <>
                               <div className="quest-meta">
@@ -493,7 +474,7 @@ export default function Adventure() {
                           >
                             <i style={{ width: `${journey.percent}%` }} />
                           </div>
-                          <p>{journey.completed.length} de 6 fragmentos encontrados</p>
+                          <p>{journey.completed.length} de 6 mensagens encontradas</p>
                           <div className="progress-stats">
                             <span>
                               <Sparkles size={15} />
@@ -508,8 +489,8 @@ export default function Adventure() {
                       </aside>
                     </div>
                     <div className="destination-section-heading">
-                      <h2>Seis lugares. Uma história.</h2>
-                      <span>SEU ROTEIRO DE EXPLORAÇÃO</span>
+                      <h2>Seis obstáculos. Um segredo.</h2>
+                      <span>ROTEIRO DE INVESTIGAÇÃO</span>
                     </div>
                     <div className="destination-grid">
                       {journey.activities.map((activity) => {
@@ -555,10 +536,10 @@ export default function Adventure() {
                     <div className="journal-banner">
                       <BookOpen size={30} />
                       <div>
-                        <span className="eyebrow">O ANTIGO REGISTRO</span>
+                        <span className="eyebrow">CADERNO DE EVIDÊNCIAS</span>
                         <h2>
                           {complete
-                            ? "Juntos o vale volta a florescer."
+                            ? "A amizade faz o jardim florescer."
                             : "Uma história que se revela aos poucos."}
                         </h2>
                         <div className="fragment-strip">
@@ -676,12 +657,10 @@ export default function Adventure() {
                     </div>
                   </>
                 )}
-                {view === "profile" && (
-                  <Profile user={user} updateUser={updateUser} logout={logout} />
-                )}
+                {view === "profile" && <Profile user={user} updateUser={updateUser} />}
                 <footer className="dashboard-footer">
                   <span>
-                    <Leaf size={13} /> Um passo de cada vez. Uma descoberta por vez.
+                    <Leaf size={13} /> Observe tudo. Desconfie de qualquer detalhe.
                   </span>
                   <button onClick={() => setReset(true)}>
                     <RotateCcw size={12} /> Reiniciar jornada
@@ -702,7 +681,7 @@ export default function Adventure() {
         />
       )}
       {info && (
-        <Modal title="Como explorar o vale" onClose={() => setInfo(false)}>
+        <Modal title="Como explorar o jardim" onClose={() => setInfo(false)}>
           <span className="eyebrow">SEU GUIA DE EXPLORAÇÃO</span>
           <h2>
             Deixe a curiosidade
@@ -710,8 +689,8 @@ export default function Adventure() {
             guiar o caminho.
           </h2>
           <p className="modal-lead">
-            Comece no pomar e visite os seis destinos do mapa. Cada desafio revela uma palavra do
-            antigo registro e libera o próximo lugar.
+            Comece na casa da Moranguinho e visite os seis cantinhos do mapa. Cada desafio revela
+            uma mensagem das amigas e libera o próximo lugar.
           </p>
           <ol className="guide-list">
             <li>
@@ -736,8 +715,8 @@ export default function Adventure() {
               <div>
                 <strong>Guarde suas descobertas</strong>
                 <p>
-                  Seu progresso fica salvo na conta. Consulte o diário, reúna os fragmentos e
-                  conquiste o certificado.
+                  Seu progresso fica salvo neste dispositivo. Consulte o diário, reúna as mensagens
+                  e conquiste o certificado.
                 </p>
               </div>
             </li>
@@ -751,13 +730,13 @@ export default function Adventure() {
         <Modal title="Reiniciar jornada" onClose={() => setReset(false)}>
           <span className="eyebrow">COMEÇAR UMA NOVA HISTÓRIA</span>
           <h2>
-            Explorar o vale
+            Explorar o jardim
             <br />
             mais uma vez?
           </h2>
           <p className="modal-lead">
-            Os fragmentos, pontos e conquistas desta conta serão reiniciados. Seu cadastro
-            continuará disponível.
+            As mensagens, pontos e conquistas desta jornada serão reiniciados. Você poderá começar
+            uma nova aventura quando quiser.
           </p>
           <div className="modal-actions">
             <button className="button button--outline" onClick={() => setReset(false)}>
@@ -770,18 +749,18 @@ export default function Adventure() {
         </Modal>
       )}
       {certificate && complete && (
-        <Modal title="Certificado de guardião do vale" onClose={() => setCertificate(false)} wide>
+        <Modal title="Certificado de amizade" onClose={() => setCertificate(false)} wide>
           <div className="certificate">
             <Logo compact />
             <span className="certificate-stars">✦ ✧ ✦</span>
             <span className="eyebrow">CERTIFICADO DE CONCLUSÃO DA AVENTURA</span>
-            <h2>Guardião do vale.</h2>
+            <h2>Amigo da Moranguinho.</h2>
             <p>Concedido a</p>
             <strong>{user.name}</strong>
             <p>
-              por explorar os seis destinos de Tutti-Frutti,
+              por explorar os seis cantinhos do jardim,
               <br />
-              reunir os fragmentos e devolver a memória ao vale.
+              resolver os desafios e celebrar a amizade.
             </p>
             <div className="certificate-seal">
               <Trophy size={28} />
@@ -794,7 +773,7 @@ export default function Adventure() {
                 year: "numeric",
               })}
             </small>
-            <span className="certificate-motto">Juntos o vale volta a florescer.</span>
+            <span className="certificate-motto">A amizade faz tudo florescer.</span>
           </div>
           <button
             className="button button--dark button--full certificate-print"

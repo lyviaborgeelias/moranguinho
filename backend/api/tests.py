@@ -8,7 +8,7 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .catalog import ACTIVITIES
+from .catalog import ACTIVITIES, correct_answer
 from .models import ActivityProgress
 
 
@@ -17,6 +17,7 @@ class JourneyTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="explorer", email="explorer@example.com", first_name="Exploradora", password="CaminhoVerde42!")
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {AccessToken.for_user(self.user)}")
+        self.client.defaults["HTTP_X_GUEST_ID"] = "test-detective"
 
     def answer(self, activity_id, answer):
         return self.client.post(f"/api/activities/{activity_id}/answer/", {"answer": answer}, format="json")
@@ -48,9 +49,9 @@ class JourneyTests(APITestCase):
         self.user.save()
         self.assertEqual(self.client.post("/api/login/", {"email": self.user.email, "password": "CaminhoVerde42!"}, format="json").status_code, 401)
 
-    def test_journey_requires_authentication(self):
+    def test_journey_allows_guest_without_login(self):
         self.client.credentials()
-        self.assertEqual(self.client.get("/api/journey/").status_code, 401)
+        self.assertEqual(self.client.get("/api/journey/").status_code, 200)
 
     def test_catalog_does_not_expose_answers_or_unearned_fragments(self):
         data = self.client.get("/api/journey/").data
@@ -59,6 +60,22 @@ class JourneyTests(APITestCase):
         for activity in data["activities"]:
             self.assertNotIn("answer", activity)
             self.assertNotIn("fragment", activity)
+            self.assertNotIn("revelation", activity)
+
+    def test_maze_rejects_shortcuts_walls_and_missing_key(self):
+        maze = ACTIVITIES[0]
+        for path in ([[1, 1], [1, 5]], [[1, 1], [0, 1]], [[1, 1], [1, 2], [1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [2, 5], [1, 5]], [[1, 1], [False, 1]], "win"):
+            self.assertFalse(correct_answer(maze, path))
+
+    def test_lanterns_validate_solution_and_move_limit(self):
+        panel = ACTIVITIES[3]
+        self.assertTrue(correct_answer(panel, [8, 6, 2, 0]))
+        for moves in ([0], [], [True], [9], [0, 0] * 5):
+            self.assertFalse(correct_answer(panel, moves))
+
+    def test_lock_has_one_solution_for_its_clues(self):
+        solutions = [f"{a}{b}{c}" for a in range(10) for b in range(10) for c in range(10) if len({a, b, c}) == 3 and a + b + c == 19 and b == a * 2 and c == a + 3]
+        self.assertEqual(solutions, [ACTIVITIES[1]["answer"]])
 
     def test_locked_activity_cannot_be_skipped(self):
         self.assertEqual(self.answer(6, "florescer").status_code, 403)
@@ -77,29 +94,31 @@ class JourneyTests(APITestCase):
         self.assertEqual(data["xp"], 600)
         self.assertEqual(data["percent"], 100)
         self.assertIsNotNone(data["finished_at"])
-        self.assertEqual(" ".join(data["fragments"]), "JUNTOS O VALE VOLTA A FLORESCER")
+        self.assertEqual(data["completed"], [1, 2, 3, 4, 5, 6])
+        self.assertIn("revelation", data["activities"][-1])
 
     def test_replay_does_not_award_duplicate_points(self):
-        self.answer(1, "Morango")
-        self.answer(1, "morango")
+        self.answer(1, ACTIVITIES[0]["answer"])
+        self.answer(1, ACTIVITIES[0]["answer"])
         data = self.client.get("/api/journey/").data
         self.assertEqual(data["xp"], 100)
         self.assertEqual(data["attempts"], 1)
 
     def test_memory_rejects_duplicate_or_malformed_pairs(self):
-        self.answer(1, "morango")
-        self.answer(2, "30")
+        self.answer(1, ACTIVITIES[0]["answer"])
+        self.answer(2, ACTIVITIES[1]["answer"])
         for answer in (["a1"], [["a1", "a2"]] * 4, [[None, {}]]):
             self.assertFalse(self.answer(3, answer).data["correct"])
 
     def test_progress_is_isolated_by_user(self):
-        self.answer(1, "morango")
+        self.answer(1, ACTIVITIES[0]["answer"])
         other = User.objects.create_user(username="other", email="other@example.com", password="CaminhoVerde42!")
         self.client.force_authenticate(other)
+        self.client.defaults["HTTP_X_GUEST_ID"] = "another-browser"
         self.assertEqual(self.client.get("/api/journey/").data["completed"], [])
 
     def test_restart_requires_confirmation_and_keeps_user(self):
-        self.answer(1, "morango")
+        self.answer(1, ACTIVITIES[0]["answer"])
         self.assertEqual(self.client.delete("/api/journey/", {}, format="json").status_code, 400)
         response = self.client.delete("/api/journey/", {"confirm": True}, format="json")
         self.assertEqual(response.data["completed"], [])

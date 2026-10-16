@@ -1,12 +1,10 @@
 import { ArrowRight, Compass, Flag, Gamepad2, MapPinned, Play, Puzzle, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import Logo from "../components/Logo";
-import { useAuth } from "../context/AuthContext";
 import "../styles/Home.css";
 
 export default function Home() {
-  const { user } = useAuth();
-  const destination = user ? "/aventura" : "/cadastro";
+  const destination = "/aventura";
   return (
     <main className="landing">
       <header className="landing-header container">
@@ -15,17 +13,11 @@ export default function Home() {
         </Link>
         <nav aria-label="Navegação principal">
           <span className="landing-game-label">
-            <Gamepad2 size={17} aria-hidden="true" /> Uma aventura de descobertas
+            <Gamepad2 size={17} aria-hidden="true" /> Um mistério. Seis obstáculos.
           </span>
-          {user ? (
-            <Link className="button button--small button--dark" to="/aventura">
-              Meu mapa <ArrowRight size={16} />
-            </Link>
-          ) : (
-            <Link className="button button--small button--outline" to="/login">
-              Entrar <ArrowRight size={16} />
-            </Link>
-          )}
+          <Link className="button button--small button--dark" to="/aventura">
+            Jogar agora <ArrowRight size={16} />
+          </Link>
         </nav>
       </header>
       <section className="landing-hero container">
@@ -34,20 +26,20 @@ export default function Home() {
             <span className="status-dot" /> SUA PRÓXIMA AVENTURA COMEÇA AQUI
           </span>
           <h1>
-            Todo lugar
+            Um segredo
             <br />
-            guarda um <em>segredo.</em>
+            foi deixado no <em>jardim.</em>
           </h1>
           <p>
-            Entre no vale de Tutti-Frutti. Siga pistas, desperte sua curiosidade e reconstrua uma
-            história que o tempo quase apagou.
+            O livro de receitas sumiu! Guie a Moranguinho por labirintos, decifre cadeados e vença
+            seis desafios para descobrir o segredo das amigas.
           </p>
           <div className="landing-actions">
             <Link className="button button--primary" to={destination}>
               <span className="landing-play" aria-hidden="true">
                 <Play size={11} fill="currentColor" strokeWidth={0} />
               </span>
-              {user ? "Continuar minha jornada" : "Começar minha aventura"}
+              Começar investigação
               <ArrowRight size={18} />
             </Link>
           </div>
@@ -70,7 +62,7 @@ export default function Home() {
         <div className="landing-visual">
           <img
             src="/imagens/tutti-frutti-landscape.png"
-            alt="Vale de Tutti-Frutti ao pôr do sol, com casas de morango e trilhas entre jardins"
+            alt="Jardim da Moranguinho ao pôr do sol, com casas de morango e trilhas entre jardins"
             fetchPriority="high"
           />
           <div className="visual-vignette" />
@@ -95,7 +87,7 @@ export default function Home() {
             <span className="trail-point trail-point--third">03</span>
           </div>
           <span className="image-coordinate">
-            VALE DE TUTTI-FRUTTI
+            JARDIM DA MORANGUINHO
             <br />
             <small>O INÍCIO DE UMA GRANDE HISTÓRIA</small>
           </span>
@@ -104,10 +96,10 @@ export default function Home() {
               <Compass size={26} />
             </span>
             <div>
-              <small>{user ? "O VALE ESPERA POR VOCÊ" : "MISSÃO 01 · OBSERVAÇÃO"}</small>
-              <strong>O portão do pomar</strong>
+              <small>MISSÃO 01 · ESTRATÉGIA</small>
+              <strong>O labirinto de espinhos</strong>
               <p>
-                {user ? "Voltar ao meu mapa" : "Encontre a primeira pista"} <ArrowRight size={12} />
+                Encontre a primeira pista <ArrowRight size={12} />
               </p>
             </div>
             <span className="destination-number" aria-hidden="true">

@@ -3,6 +3,11 @@ import { clearAuth, getToken, updateToken } from "./auth";
 
 const baseURL = import.meta.env.VITE_API_URL || "/api";
 const api = axios.create({ baseURL, timeout: 15000 });
+const guestKey = "tutti-frutti-guest-id";
+const guestId =
+  localStorage.getItem(guestKey) ||
+  (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+localStorage.setItem(guestKey, guestId);
 const publicPaths = [
   "/login/",
   "/register/",
@@ -13,6 +18,7 @@ const publicPaths = [
 let refreshPromise = null;
 
 api.interceptors.request.use((config) => {
+  config.headers["X-Guest-ID"] = guestId;
   const token = getToken();
   if (token && !publicPaths.includes(config.url)) config.headers.Authorization = `Bearer ${token}`;
   return config;

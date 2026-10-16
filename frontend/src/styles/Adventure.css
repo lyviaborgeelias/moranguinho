@@ -795,6 +795,217 @@
   color: #93a17c;
   font-size: 12px;
 }
+.case-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+  padding: 22px;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #203d38, #395548);
+  border: 1px solid #526751;
+  color: #fff7e2;
+}
+.case-progress .eyebrow {
+  color: #dbbf77;
+}
+.case-progress h2 {
+  margin-top: 6px;
+  font-size: 24px;
+}
+.case-progress p {
+  margin-top: 7px;
+  max-width: 450px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #d8e3ce;
+}
+.phase-track {
+  display: flex;
+  gap: 8px;
+}
+.phase-step {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border: 1px solid #7d9279;
+  border-radius: 50%;
+  background: #ffffff0d;
+  color: #e4dfc9;
+}
+.phase-completed {
+  background: #718e56;
+  color: white;
+}
+.phase-available {
+  background: #f1cf83;
+  color: #3d482d;
+  box-shadow: 0 0 0 5px #f1cf831a;
+  font-weight: 700;
+}
+.game-console {
+  border: 1px solid #566b69;
+  border-radius: 16px;
+  padding: clamp(12px, 3vw, 22px);
+  background: radial-gradient(ellipse at top, #304e49, #162f30);
+  color: #f6f0d7;
+  box-shadow:
+    inset 0 1px 0 #ffffff20,
+    0 9px 22px #17332d18;
+}
+.game-hud {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 11px;
+  color: #e2ca8b;
+  font-weight: 600;
+}
+.garden-maze {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  gap: 3px;
+  max-width: 350px;
+  margin: auto;
+  border: 5px solid #52685b;
+  border-radius: 10px;
+  background: #52685b;
+}
+.maze-tile {
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 0;
+  border-radius: 4px;
+  background: #e4d7af;
+  color: #526449;
+  padding: 0;
+  font-size: clamp(14px, 4vw, 25px);
+}
+.maze-wall {
+  background: #294339;
+}
+.maze-danger {
+  background: #a75254;
+  color: #ffe2b6;
+}
+.maze-player {
+  background: #fff5d0;
+  box-shadow: inset 0 0 0 3px #dba15f;
+}
+.maze-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.maze-controls button {
+  border: 1px solid #83918a;
+  border-radius: 8px;
+  background: #344e49;
+  color: white;
+  width: 44px;
+  height: 42px;
+  font-size: 22px;
+}
+.game-message {
+  margin: 16px 0 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #e0e9da;
+}
+.game-restart {
+  border: 0;
+  background: transparent;
+  color: #efd38c;
+  font-size: 12px;
+  padding: 10px 0;
+}
+.safe-dials {
+  display: flex;
+  justify-content: center;
+  gap: clamp(4px, 2vw, 12px);
+  margin: 22px 0;
+}
+.safe-dial {
+  min-width: 0;
+  flex: 0 1 58px;
+  text-align: center;
+}
+.safe-dial button {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid #63746b;
+  border-radius: 6px;
+  background: #364d48;
+  color: #efcf83;
+}
+.safe-dial output {
+  display: block;
+  margin: 7px 0;
+  padding: 12px 0;
+  border-radius: 5px;
+  background: #fbf1d5;
+  color: #223e38;
+  font: 700 clamp(20px, 5vw, 32px)/1.2 monospace;
+  box-shadow: inset 0 3px 5px #0002;
+}
+.lock-clues,
+.route-clues {
+  padding-left: 21px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.lock-clues li,
+.route-clues li {
+  margin-bottom: 8px;
+}
+.route-clues {
+  border-left: 3px solid #c9945a;
+  background: #f3eedf;
+  padding: 14px 16px 14px 32px;
+  border-radius: 6px;
+  color: #556a4c;
+}
+.lights-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 280px;
+  margin: 22px auto;
+}
+.light-switch {
+  aspect-ratio: 1;
+  background: #203333;
+  border: 2px solid #5a716b;
+  border-radius: 14px;
+  color: #68817a;
+  font-size: 32px;
+}
+.light-switch.is-on {
+  background: #e3b453;
+  border-color: #f6dd9d;
+  color: #624414;
+  box-shadow:
+    0 0 20px #efbd443d,
+    inset 0 0 12px #fff5;
+}
+.memory-fruit {
+  font-size: 30px;
+}
+.game-console button:focus-visible {
+  outline: 3px solid #ffd887;
+}
+.reward-view > p {
+  line-height: 1.8;
+  max-width: 440px;
+  margin-inline: auto;
+  color: #61744d;
+}
 .challenge-heading {
   display: flex;
   align-items: center;
@@ -824,6 +1035,113 @@
 .challenge-question {
   font: 500 20px/1.4 var(--serif);
   margin: 22px 0 19px;
+}
+.obstacle-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 18px 0 20px;
+  padding: 13px 14px;
+  border: 1px solid #ead5b6;
+  border-left: 3px solid #c78355;
+  border-radius: 9px;
+  background: #fff7e8;
+  color: #9b6b4d;
+}
+.obstacle-card > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.obstacle-card span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.obstacle-card p {
+  font-size: 11px;
+  line-height: 1.55;
+  color: #8f765f;
+}
+.clue-panel {
+  margin: 18px 0 20px;
+  padding: 15px;
+  border: 1px solid #dfe6d3;
+  border-radius: 10px;
+  background: #f7f9ef;
+}
+.clue-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+.clue-panel-heading strong {
+  color: #8a9778;
+  font-size: 10px;
+  font-weight: 600;
+}
+.clue-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.clue-card {
+  min-height: 73px;
+  padding: 10px;
+  border: 1px dashed #cbd7b8;
+  border-radius: 8px;
+  background: #fffef8;
+  color: #768866;
+  text-align: left;
+}
+.clue-card:hover,
+.clue-card.is-inspected {
+  border-style: solid;
+  border-color: #9bb17b;
+  background: #edf4e3;
+}
+.clue-card > span {
+  display: block;
+  min-height: 15px;
+  margin-bottom: 8px;
+  color: #a3b28d;
+  font-size: 10px;
+  font-weight: 700;
+}
+.clue-card strong {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.clue-panel-tip {
+  display: block;
+  margin-top: 10px;
+  color: #9aa687;
+  font-size: 10px;
+}
+.memory-failed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 13px;
+  padding: 11px;
+  border: 1px solid #efd9d4;
+  border-radius: 8px;
+  background: #fff0ed;
+  color: #ac4750;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.memory-failed .button {
+  flex-shrink: 0;
+  min-height: 35px;
+  padding: 8px 10px;
+  font-size: 10px;
 }
 .challenge-footer {
   display: flex;
@@ -1062,7 +1380,16 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-top: 8px;
+}
+.cipher-section-label {
+  display: block;
   margin-top: 20px;
+  color: #8b9878;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
 }
 .fragment-strip span {
   background: #ecf1df;
@@ -1079,6 +1406,38 @@
   border-style: dashed;
   background: #f5f6ed;
   color: #b8c19f;
+}
+.cipher-guide {
+  margin: 18px 0 10px;
+  padding: 11px 13px;
+  border: 1px solid #e6e5d4;
+  border-radius: 8px;
+  background: #f7f4e8;
+  color: #7a886d;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.cipher-code-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid #dce4ce;
+  border-radius: 9px;
+  background: #eef3e4;
+}
+.cipher-code-card span {
+  color: #7e9068;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.cipher-code-card strong {
+  color: #355642;
+  font: 600 22px/1 var(--serif);
+  letter-spacing: 4px;
 }
 .journal-banner {
   display: flex;
@@ -1698,6 +2057,16 @@
   }
 }
 @media (max-width: 460px) {
+  .clue-grid {
+    grid-template-columns: 1fr;
+  }
+  .memory-failed {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .memory-failed .button {
+    width: 100%;
+  }
   .dashboard {
     padding: 22px 14px;
   }
