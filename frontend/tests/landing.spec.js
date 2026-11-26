@@ -50,16 +50,6 @@ test("entrada com visual de jogo permanece em uma única tela", async ({ page },
       imageFits: true,
     });
     expect(layout.imageHeight).toBeGreaterThan(100);
-    const mission = page.getByRole("link", { name: /MISSÃO 01/ });
-    if (await mission.isVisible()) {
-      const card = await mission.boundingBox();
-      const start = await page.locator(".trail-point--start").boundingBox();
-      expect(card.y + card.height).toBeLessThanOrEqual(height);
-      expect(
-        start.y + start.height,
-        `${width} × ${height}: trilha sem sobreposição`,
-      ).toBeLessThanOrEqual(card.y);
-    }
     if (width === 1440 || width === 390)
       await page.screenshot({ path: testInfo.outputPath(`landing-game-${width}.png`) });
   }
@@ -70,14 +60,15 @@ test("convites da entrada levam direto à investigação", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /Começar investigação/ }).click();
   await expect(page).toHaveURL(/\/aventura$/);
-  await expect(page.getByRole("button", { name: "Explorar destino", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Seguir até Laranjinha" })).toBeVisible();
 
   await page.goto("/");
   await page.getByRole("link", { name: /MISSÃO 01/ }).click();
   await expect(page).toHaveURL(/\/aventura$/);
 
   await page.goto("/");
-  await page.getByRole("link", { name: /^Jogar agora/ }).click();
-  await expect(page).toHaveURL(/\/aventura$/);
-  await expect(page.getByRole("button", { name: "Explorar destino", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Como jogar", exact: true }).first().click();
+  await expect(page.getByRole("dialog", { name: "Como explorar o jardim" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });

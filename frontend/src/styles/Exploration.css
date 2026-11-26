@@ -1,0 +1,920 @@
+.exploration {
+  position: absolute;
+  inset: 0;
+  background: #a8b6a2;
+  color: #f4efdf;
+  overflow: hidden;
+}
+.garden-renderer {
+  position: absolute;
+  inset: 0;
+}
+.garden-renderer canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+  outline-offset: -4px;
+}
+.garden-renderer canvas:active {
+  cursor: grabbing;
+}
+.exploration--paused .garden-renderer {
+  filter: blur(3px) brightness(0.65);
+}
+.npc-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.npc-tag {
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 0;
+  color: white;
+  pointer-events: auto;
+  text-shadow: 0 2px 5px #11251c;
+  padding: 0;
+}
+.npc-tag strong {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff4dce8;
+  color: #563947;
+  backdrop-filter: blur(5px);
+  border: 1px solid #a6686866;
+  text-shadow: none;
+  box-shadow: 0 3px 8px #3b283327;
+}
+.npc-quest-marker {
+  display: grid;
+  place-items: center;
+  height: 29px;
+  width: 29px;
+  border: 1px solid #ffe3ad;
+  background: #a44863;
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  font: 22px var(--serif);
+  box-shadow: 0 2px 7px #253d2d55;
+}
+.npc-tag[data-status="locked"] .npc-quest-marker {
+  opacity: 0.45;
+  background: #66735c;
+  color: #fff4d2;
+  border-color: #c8d0b4;
+}
+.npc-tag[data-status="completed"] .npc-quest-marker {
+  background: #557746;
+  border-color: #b3cf9e;
+  font-size: 0;
+}
+.npc-tag[data-status="completed"] .npc-quest-marker::after {
+  content: "✓";
+  font-size: 18px;
+}
+.field-mission {
+  position: absolute;
+  z-index: 2;
+  top: 96px;
+  left: 26px;
+  width: 278px;
+  padding: 16px 17px 13px;
+  background: linear-gradient(145deg, #fff6dff7, #f9e1cce8);
+  border: 1px solid #bd8171b5;
+  border-left: 3px solid #cb6983;
+  border-radius: 15px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 0 #8f544d58, 0 8px 24px #3d342337;
+}
+.field-mission-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.field-mission-heading .eyebrow {
+  color: #855246;
+  font-size: 7px;
+  letter-spacing: 1.4px;
+}
+.field-mission h1 {
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  margin-top: 2px;
+  color: #513245;
+}
+.mission-compass {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #c97086a8;
+  border-radius: 50%;
+  color: #9b3d5b;
+  background: #f8d6d8;
+  flex-shrink: 0;
+}
+.mission-compass svg {
+  transition: transform 0.2s linear;
+}
+.field-mission > p {
+  font-size: 11px;
+  line-height: 1.65;
+  color: #6b5546;
+  margin: 11px 0 13px;
+}
+.field-mission-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 11px;
+  border-top: 1px solid #b27b6940;
+  gap: 8px;
+}
+.field-mission-bottom > span {
+  display: flex;
+  gap: 5px;
+  font-size: 10px;
+  color: #805c49;
+  font-weight: 800;
+  align-items: center;
+  white-space: nowrap;
+}
+.field-mission-bottom button {
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  color: #943957;
+  font-size: 10px;
+  font-weight: 900;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.field-mission-bottom button:hover {
+  color: #64213e;
+}
+.field-location {
+  position: absolute;
+  top: 105px;
+  right: 28px;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  column-gap: 8px;
+  text-shadow: 0 2px 8px #163128;
+}
+.field-location > span:not(.location-line) {
+  font-size: 13px;
+  font-weight: 800;
+}
+.location-line {
+  width: 26px;
+  height: 1px;
+  background: #f1e4bb;
+}
+.field-location small {
+  grid-column: 3;
+  margin-top: 4px;
+  font-size: 7px;
+  letter-spacing: 1.5px;
+  color: #dce3cc;
+}
+.walking-help {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  position: absolute;
+  left: 27px;
+  bottom: 27px;
+  padding: 10px 14px;
+  border: 1px solid #dee5ce30;
+  border-radius: 7px;
+  background: #1d3528b0;
+  backdrop-filter: blur(8px);
+}
+kbd {
+  display: inline-grid;
+  place-items: center;
+  font:
+    700 10px "Nunito",
+    sans-serif;
+  width: 22px;
+  height: 21px;
+  border: 1px solid #e8e3c770;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  color: #ede6cb;
+  background: #e0e8d512;
+}
+.walking-help > span:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.walking-help > span:first-child > span {
+  display: flex;
+  gap: 3px;
+}
+.walking-help p {
+  font-size: 11px;
+  font-weight: 800;
+}
+.walking-help i {
+  display: block;
+  font-size: 9px;
+  color: #c5ceb5;
+  font-style: normal;
+  margin-top: 4px;
+  font-weight: 500;
+}
+.walking-help i kbd {
+  width: 17px;
+  height: 17px;
+  font-size: 8px;
+  margin-right: 2px;
+}
+.walking-help-divider {
+  width: 1px;
+  height: 29px;
+  background: #ccd6bd35;
+  margin-inline: 2px;
+}
+.walking-state {
+  position: absolute;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 10px;
+  background: #1c3429d1;
+  color: #e4e4ce;
+  border: 1px solid #e8d8ad47;
+  border-radius: 6px;
+  padding: 9px 14px;
+  max-width: calc(100% - 24px);
+  text-align: center;
+}
+.talk-prompt {
+  position: absolute;
+  bottom: 117px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid #d5c59a;
+  border-radius: 10px;
+  padding: 12px 15px;
+  color: #fbf1d8;
+  background: linear-gradient(#40523aef, #2a402fef);
+  box-shadow:
+    0 4px 0 #172f26,
+    0 8px 20px #1c302647;
+  backdrop-filter: blur(8px);
+}
+.talk-prompt small {
+  display: block;
+  font-size: 7px;
+  letter-spacing: 1.4px;
+  color: #d8cda8;
+}
+.talk-prompt strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+.talk-prompt > span {
+  text-align: left;
+  min-width: 95px;
+}
+.talk-prompt kbd {
+  width: 28px;
+  height: 30px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+.talk-prompt:hover {
+  background: #506342;
+}
+.touch-controls {
+  display: none;
+}
+.garden-starting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: #354d3f;
+  color: #eee3c7;
+}
+.garden-starting strong {
+  font: 26px var(--serif);
+}
+.garden-starting > span:last-child {
+  font-size: 12px;
+  color: #c6cfb5;
+}
+.garden-error {
+  z-index: 9;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(410px, calc(100% - 28px));
+  background: #faf2d9;
+  color: #6f5c40;
+  border: 2px solid #bca275;
+  border-radius: 13px;
+  padding: 24px;
+  font-size: 13px;
+  line-height: 1.7;
+  box-shadow: 0 12px 40px #18302770;
+}
+.garden-error .button {
+  margin-top: 15px;
+}
+.conversation-window {
+  overflow: visible;
+  width: min(550px, calc(100vw - 28px));
+  padding: 30px;
+}
+.conversation-character {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin: -76px auto 22px;
+  width: 112px;
+  position: relative;
+}
+.friend-portrait {
+  width: 105px;
+  height: 116px;
+  background-image: url("/imagens/retratos-tutti-frutti.webp");
+  background-repeat: no-repeat;
+  background-size: 600% 100%;
+  background-position: var(--portrait-offset) center;
+  filter: drop-shadow(0 5px 5px #302c2820);
+}
+.conversation-character .friend-portrait {
+  background-color: #fcf0de;
+  border: 3px solid #bd9c66;
+  border-radius: 50% 50% 18px 18px;
+}
+.conversation-character > span {
+  display: block;
+  color: #fff6de;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 5px 13px;
+  border: 2px solid #e1c58f;
+  border-radius: 7px;
+  box-shadow: 0 2px #8c71483b;
+  margin-top: -10px;
+  z-index: 1;
+}
+.conversation-window > .eyebrow {
+  font-size: 8px;
+}
+.conversation-window h2 {
+  font-size: 29px;
+  margin-bottom: 15px;
+}
+.conversation-text {
+  font-size: 14px;
+  color: #7b6a4e;
+  line-height: 1.9;
+}
+.conversation-reward {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  padding: 11px 0;
+  border-top: 1px solid #d4be8d;
+  border-bottom: 1px solid #d4be8d;
+  font-size: 11px;
+  color: #8c774b;
+  font-weight: 800;
+}
+.conversation-reward span {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 600;
+}
+.conversation-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+.conversation-actions .button {
+  flex: 1;
+  font-size: 12px;
+  padding-inline: 12px;
+}
+
+/* The garden fills the window; the interface floats above the live scene. */
+.game-shell {
+  display: block;
+  position: relative;
+}
+.game-shell .game-stage {
+  height: 100%;
+}
+.game-shell .game-hud-bar {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 78px;
+  background: linear-gradient(#152b249c, #21372a1a);
+  border: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+.game-hud-bar > * {
+  pointer-events: auto;
+}
+.game-shell .player-badge {
+  background: #fff3dfec;
+  border: 1px solid #c68d77;
+  color: #5a3849;
+  box-shadow: 0 3px 0 #77544766, 0 4px 12px #18332630;
+  border-radius: 13px;
+}
+.game-shell .player-portrait {
+  border: 0;
+  border-radius: 7px;
+  background: #f4c8d0;
+}
+.game-shell .player-level {
+  background: #edb3c1;
+  color: #64354f;
+}
+.game-shell .game-tool {
+  background: #293e31d9;
+  color: #eee4c8;
+  border: 1px solid #ddd4b470;
+  box-shadow: 0 3px 0 #20352a80;
+  border-radius: 9px;
+}
+.game-shell .game-tool:hover {
+  background: #526044;
+}
+.game-shell .game-bottom-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  height: 68px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  z-index: 5;
+}
+.game-shell .game-bottom-hint,
+.game-shell .game-bottom-brand {
+  display: none;
+}
+.game-shell .game-dock {
+  gap: 5px;
+  border: 1px solid #e9dfc445;
+  padding: 6px;
+  background: #20392bda;
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+}
+.game-shell .game-dock button {
+  min-width: 90px;
+  border-radius: 8px;
+  padding: 5px 12px;
+}
+.game-shell .game-dock button.active {
+  transform: none;
+  border: 1px solid #ffe3c1;
+  background: #f7d7d8;
+  color: #6d344e;
+  box-shadow: none;
+}
+.game-shell .game-dock button.active::before {
+  display: none;
+}
+.game-shell .game-menu {
+  position: absolute;
+  top: 90px;
+  bottom: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  max-height: none;
+  animation: none;
+}
+.game-menu .game-menu-heading {
+  position: sticky;
+  top: -28px;
+  background: #f8eccc;
+  z-index: 2;
+  padding-top: 7px;
+}
+.game-shell .world-error {
+  top: 90px;
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  .walking-help {
+    display: none;
+  }
+  .touch-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    position: absolute;
+    left: 20px;
+    bottom: 103px;
+  }
+  .movement-stick {
+    width: 100px;
+    height: 100px;
+    border: 1px solid #eee6d17a;
+    border-radius: 50%;
+    background: #253e305c;
+    backdrop-filter: blur(5px);
+    display: grid;
+    place-items: center;
+    touch-action: none;
+    box-shadow: inset 0 0 0 15px #1b332938;
+  }
+  .movement-stick > span {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ece3c58c;
+    border-radius: 50%;
+    background: #c9c5a14d;
+    transform: translate(var(--stick-x), var(--stick-y));
+    box-shadow: 0 3px 12px #18322950;
+    pointer-events: none;
+  }
+  .movement-buttons {
+    display: flex;
+    gap: 3px;
+  }
+  .movement-buttons button {
+    border: 1px solid #e0dfc96e;
+    border-radius: 5px;
+    width: 25px;
+    height: 25px;
+    display: grid;
+    place-items: center;
+    background: #243f2fb0;
+    color: #e8e3ca;
+    padding: 0;
+    touch-action: none;
+  }
+  .talk-prompt {
+    left: auto;
+    right: 20px;
+    transform: none;
+    bottom: 120px;
+  }
+  .walking-state {
+    bottom: 105px;
+    left: auto;
+    right: 18px;
+    transform: none;
+    width: 180px;
+    font-size: 9px;
+    padding: 10px;
+  }
+  .field-location {
+    top: 106px;
+    right: 20px;
+  }
+  .field-location > span:not(.location-line) {
+    font-size: 11px;
+  }
+  .field-location small {
+    display: none;
+  }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .game-shell .game-hud-bar {
+    height: 66px;
+    padding: 9px 12px;
+  }
+  .game-shell .player-badge {
+    border-radius: 7px;
+  }
+  .game-shell .player-portrait {
+    height: 42px;
+    width: 36px;
+    font-size: 23px;
+  }
+  .game-shell .player-badge small {
+    font-size: 5px;
+    letter-spacing: 0.6px;
+  }
+  .game-shell .player-badge strong {
+    font-size: 16px;
+  }
+  .game-shell .hud-progress {
+    gap: 2px;
+  }
+  .game-shell .hud-progress .progress-track {
+    border-width: 1px;
+    height: 7px;
+  }
+  .game-shell .game-tools .game-tool {
+    width: 30px;
+    height: 31px;
+  }
+  .field-mission {
+    top: 80px;
+    left: 13px;
+    width: 216px;
+    padding: 11px 12px 10px;
+  }
+  .field-mission-heading {
+    gap: 8px;
+  }
+  .field-mission h1 {
+    font-size: 13px;
+  }
+  .field-mission-heading .eyebrow {
+    font-size: 6px;
+    letter-spacing: 1px;
+  }
+  .mission-compass {
+    width: 28px;
+    height: 28px;
+  }
+  .mission-compass svg {
+    width: 16px;
+  }
+  .field-mission > p {
+    display: none;
+  }
+  .field-mission-bottom {
+    padding-top: 7px;
+    margin-top: 9px;
+  }
+  .field-mission-bottom > span {
+    font-size: 9px;
+  }
+  .field-mission-bottom button {
+    font-size: 8px;
+    gap: 4px;
+  }
+  .field-location {
+    left: 17px;
+    right: auto;
+    top: 185px;
+    grid-template-columns: auto auto;
+    column-gap: 5px;
+  }
+  .field-location .location-line {
+    display: none;
+  }
+  .field-location > span:not(.location-line) {
+    font-size: 9px;
+  }
+  .field-location svg {
+    width: 12px;
+  }
+  .game-shell .game-bottom-bar {
+    width: calc(100% - 24px);
+    height: 63px;
+    bottom: 13px;
+  }
+  .game-shell .game-dock {
+    width: 100%;
+    gap: 3px;
+    padding: 5px;
+  }
+  .game-shell .game-dock button {
+    min-width: 0;
+    padding: 4px 8px;
+    flex: 1;
+  }
+  .game-shell .game-dock button > span {
+    font-size: 8px;
+  }
+  .game-shell .game-dock button svg {
+    width: 20px;
+    height: 20px;
+  }
+  .touch-controls {
+    left: 16px;
+    bottom: 96px;
+  }
+  .talk-prompt {
+    right: 15px;
+    bottom: 118px;
+    padding: 10px 11px;
+    gap: 8px;
+  }
+  .talk-prompt > span {
+    min-width: 80px;
+  }
+  .talk-prompt strong {
+    font-size: 15px;
+  }
+  .talk-prompt small {
+    font-size: 6px;
+    letter-spacing: 1px;
+  }
+  .talk-prompt kbd {
+    display: none;
+  }
+  .talk-prompt > svg {
+    width: 18px;
+  }
+  .walking-state {
+    width: 155px;
+    right: 14px;
+    bottom: 108px;
+    line-height: 1.6;
+  }
+  .npc-tag strong {
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+  .npc-quest-marker {
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+  }
+  .game-shell .game-menu {
+    top: 78px;
+    bottom: 91px;
+    width: calc(100% - 24px);
+    padding: 20px 14px;
+  }
+  .game-menu .game-menu-heading {
+    top: -20px;
+  }
+  .conversation-window {
+    padding: 23px 20px;
+    max-height: calc(100dvh - 100px);
+    overflow: auto;
+    margin-top: 80px;
+  }
+  .conversation-character {
+    margin-top: -10px;
+    margin-bottom: 15px;
+    width: 86px;
+  }
+  .conversation-character .friend-portrait {
+    height: 89px;
+    width: 81px;
+  }
+  .conversation-window h2 {
+    font-size: 26px;
+  }
+  .conversation-text {
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .conversation-actions {
+    gap: 9px;
+    margin-top: 20px;
+  }
+  .conversation-actions .button {
+    font-size: 10px;
+    padding-inline: 9px;
+    min-height: 43px;
+  }
+  .conversation-reward {
+    font-size: 10px;
+  }
+  .conversation-reward span {
+    font-size: 8px;
+  }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  .game-shell .game-hud-bar {
+    height: 60px;
+    padding: 8px 15px;
+  }
+  .game-shell .game-bottom-bar {
+    height: 54px;
+    bottom: 8px;
+  }
+  .game-shell .game-dock {
+    padding: 4px;
+  }
+  .game-shell .game-dock button {
+    min-width: 70px;
+    padding: 2px 10px;
+  }
+  .game-shell .game-dock button svg {
+    width: 17px;
+    height: 17px;
+  }
+  .game-shell .game-dock button > span {
+    font-size: 7px;
+  }
+  .field-mission {
+    top: 75px;
+    left: 13px;
+    width: 213px;
+    padding: 10px;
+  }
+  .field-mission h1 {
+    font-size: 12px;
+  }
+  .field-mission > p {
+    display: none;
+  }
+  .field-mission-heading .eyebrow {
+    font-size: 6px;
+  }
+  .field-mission-bottom {
+    padding-top: 6px;
+    margin-top: 6px;
+  }
+  .field-mission-bottom button,
+  .field-mission-bottom > span {
+    font-size: 8px;
+  }
+  .field-location {
+    top: 80px;
+    right: 15px;
+  }
+  .touch-controls {
+    bottom: 25px;
+    left: 15px;
+  }
+  .movement-stick {
+    width: 70px;
+    height: 70px;
+  }
+  .movement-stick > span {
+    width: 30px;
+    height: 30px;
+  }
+  .movement-buttons {
+    display: none;
+  }
+  .talk-prompt {
+    right: 15px;
+    bottom: 26px;
+    padding: 9px 11px;
+    gap: 8px;
+  }
+  .talk-prompt strong {
+    font-size: 13px;
+  }
+  .talk-prompt kbd {
+    display: none;
+  }
+  .talk-prompt > span {
+    min-width: 80px;
+  }
+  .talk-prompt small {
+    font-size: 6px;
+  }
+  .walking-state {
+    right: 15px;
+    bottom: 26px;
+    width: 150px;
+  }
+  .game-shell .game-menu {
+    top: 68px;
+    bottom: 72px;
+  }
+  .conversation-window {
+    max-height: calc(100dvh - 30px);
+    overflow: auto;
+    padding: 22px;
+  }
+  .conversation-character {
+    display: none;
+  }
+  .conversation-window h2 {
+    font-size: 24px;
+  }
+  .conversation-text {
+    font-size: 12px;
+  }
+}

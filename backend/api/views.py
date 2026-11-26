@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .catalog import ACTIVITIES, correct_answer, public_activity
+from .catalog import ACTIVITIES, incorrect_questions, public_activity
 from .models import ActivityProgress, Journey
 
 
@@ -218,13 +218,20 @@ class ActivityAnswerView(APIView):
                 return Response({"erro": "Conclua o destino anterior para desbloquear esta atividade."}, status=403)
             record, _ = ActivityProgress.objects.get_or_create(user=user, activity_id=activity_id)
             already_completed = bool(record.completed_at)
-            correct = correct_answer(activity, request.data.get("answer"))
+            review = incorrect_questions(activity, request.data.get("answer"))
+            correct = review == []
             if not already_completed:
                 record.attempts = F("attempts") + 1
                 if correct:
                     record.completed_at = timezone.now()
                 record.save()
-        return Response({"correct": correct, "already_completed": already_completed, "fragment": activity["fragment"] if correct else None, "journey": journey_payload(user)})
+        return Response({
+            "correct": correct,
+            "incorrect_questions": review,
+            "already_completed": already_completed,
+            "fragment": activity["fragment"] if correct else None,
+            "journey": journey_payload(user),
+        })
 
 
 class HealthView(PublicView):

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { X } from "lucide-react";
 
-export default function Modal({ title, children, onClose, wide = false }) {
+export default function Modal({ title, children, onClose, wide = false, className = "" }) {
   const dialog = useRef(null);
   useLayoutEffect(() => {
     const node = dialog.current;
@@ -11,7 +11,7 @@ export default function Modal({ title, children, onClose, wide = false }) {
   return (
     <dialog
       ref={dialog}
-      className={`modal ${wide ? "modal--wide" : ""}`}
+      className={`modal ${wide ? "modal--wide" : ""} ${className}`}
       onCancel={(event) => {
         event.preventDefault();
         onClose();

@@ -1,116 +1,82 @@
-import { ArrowRight, Compass, Flag, Gamepad2, MapPinned, Play, Puzzle, Trophy } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, BookOpen, HelpCircle, Play, Sparkles, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
-import Logo from "../components/Logo";
+import Logo, { StrawberryMark } from "../components/Logo";
+import { Fireflies, FullscreenButton, GameGuide } from "../components/GameChrome";
 import "../styles/Home.css";
 
 export default function Home() {
-  const destination = "/aventura";
+  const [guide, setGuide] = useState(false);
   return (
     <main className="landing">
-      <header className="landing-header container">
-        <Link to="/" aria-label="Início">
-          <Logo />
-        </Link>
-        <nav aria-label="Navegação principal">
-          <span className="landing-game-label">
-            <Gamepad2 size={17} aria-hidden="true" /> Um mistério. Seis obstáculos.
-          </span>
-          <Link className="button button--small button--dark" to="/aventura">
-            Jogar agora <ArrowRight size={16} />
-          </Link>
-        </nav>
+      <div className="landing-visual" aria-hidden="true">
+        <img src="/imagens/tutti-frutti-landscape.png" alt="" fetchPriority="high" />
+        <div className="visual-vignette" />
+      </div>
+      <Fireflies />
+      <header className="landing-header">
+        <Logo light />
+        <div className="game-tools">
+          <button
+            className="game-tool"
+            aria-label="Como jogar"
+            title="Como jogar"
+            onClick={() => setGuide(true)}
+          >
+            <HelpCircle size={21} />
+          </button>
+          <FullscreenButton />
+        </div>
       </header>
-      <section className="landing-hero container">
-        <div className="landing-copy">
-          <span className="eyebrow">
-            <span className="status-dot" /> SUA PRÓXIMA AVENTURA COMEÇA AQUI
-          </span>
-          <h1>
-            Um segredo
-            <br />
-            foi deixado no <em>jardim.</em>
-          </h1>
-          <p>
-            O livro de receitas sumiu! Guie a Moranguinho por labirintos, decifre cadeados e vença
-            seis desafios para descobrir o segredo das amigas.
-          </p>
-          <div className="landing-actions">
-            <Link className="button button--primary" to={destination}>
-              <span className="landing-play" aria-hidden="true">
-                <Play size={11} fill="currentColor" strokeWidth={0} />
-              </span>
-              Começar investigação
-              <ArrowRight size={18} />
-            </Link>
-          </div>
-          <div className="hero-details">
-            <span>
-              <MapPinned size={17} />
-              <strong>6</strong> destinos
-            </span>
-            <i />
-            <span>
-              <Puzzle size={17} />
-              <strong>6</strong> desafios
-            </span>
-            <i />
-            <span>
-              <Trophy size={17} /> conquistas
-            </span>
-          </div>
+      <section className="landing-copy">
+        <span className="title-ribbon">
+          <Sparkles size={15} /> UMA AVENTURA DA MORANGUINHO <Sparkles size={15} />
+        </span>
+        <h1>
+          Um segredo<span>no jardim.</span>
+        </h1>
+        <div className="title-flourish" aria-hidden="true">
+          ✦ <i /> <StrawberryMark size={22} /> <i /> ✦
         </div>
-        <div className="landing-visual">
-          <img
-            src="/imagens/tutti-frutti-landscape.png"
-            alt="Jardim da Moranguinho ao pôr do sol, com casas de morango e trilhas entre jardins"
-            fetchPriority="high"
-          />
-          <div className="visual-vignette" />
-          <div className="landing-trail" aria-hidden="true">
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <path
-                className="trail-shadow"
-                d="M 22 57 C 16 48, 34 50, 40 40 S 48 29, 61 22"
-                vectorEffect="non-scaling-stroke"
-              />
-              <path
-                className="trail-line"
-                d="M 22 57 C 16 48, 34 50, 40 40 S 48 29, 61 22"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
-            <span className="trail-point trail-point--start">
-              <Flag size={17} fill="currentColor" />
-              <small>INÍCIO</small>
-            </span>
-            <span className="trail-point trail-point--second">02</span>
-            <span className="trail-point trail-point--third">03</span>
-          </div>
-          <span className="image-coordinate">
-            JARDIM DA MORANGUINHO
-            <br />
-            <small>O INÍCIO DE UMA GRANDE HISTÓRIA</small>
-          </span>
-          <Link className="floating-destination" to={destination}>
-            <span aria-hidden="true">
-              <Compass size={26} />
-            </span>
-            <div>
-              <small>MISSÃO 01 · ESTRATÉGIA</small>
-              <strong>O labirinto de espinhos</strong>
-              <p>
-                Encontre a primeira pista <ArrowRight size={12} />
-              </p>
-            </div>
-            <span className="destination-number" aria-hidden="true">
-              01
-            </span>
+        <p>
+          O livro de receitas sumiu!
+          <br />
+          Uma trilha de pistas espera por você.
+        </p>
+        <div className="landing-actions">
+          <Link className="button button--primary title-play" to="/aventura">
+            <Play size={21} fill="currentColor" /> Começar investigação <ArrowRight size={20} />
           </Link>
-          <div className="image-tag">
-            <MapPinned size={15} /> Mapa de aventura
-          </div>
+          <button className="title-help" onClick={() => setGuide(true)}>
+            <BookOpen size={17} /> Como jogar
+          </button>
         </div>
+        <span className="title-save">
+          <span className="status-dot" /> Seu progresso é salvo automaticamente
+        </span>
       </section>
+      <Link className="floating-destination" to="/aventura">
+        <span className="letter-pin" aria-hidden="true">
+          ✦
+        </span>
+        <span className="eyebrow">MISSÃO 01</span>
+        <strong>Você encontrou um bilhete!</strong>
+        <p>Laranjinha achou um bilhete no jardim do café.</p>
+        <span className="letter-action">
+          Abrir a primeira pista <ArrowRight size={15} />
+        </span>
+      </Link>
+      <footer className="landing-footer">
+        <span>
+          <Sparkles size={16} /> 6 fases para explorar
+        </span>
+        <i />
+        <span>
+          <Trophy size={16} /> Um mistério para resolver
+        </span>
+        <span className="landing-footer-note">A curiosidade é o seu superpoder.</span>
+      </footer>
+      {guide && <GameGuide onClose={() => setGuide(false)} />}
     </main>
   );
 }

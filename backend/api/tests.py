@@ -62,27 +62,35 @@ class JourneyTests(APITestCase):
             self.assertNotIn("fragment", activity)
             self.assertNotIn("revelation", activity)
 
-    def test_maze_rejects_shortcuts_walls_and_missing_key(self):
-        maze = ACTIVITIES[0]
-        for path in ([[1, 1], [1, 5]], [[1, 1], [0, 1]], [[1, 1], [1, 2], [1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [2, 5], [1, 5]], [[1, 1], [False, 1]], "win"):
-            self.assertFalse(correct_answer(maze, path))
+    def test_questions_reject_malformed_or_incomplete_answers(self):
+        activity = ACTIVITIES[0]
+        for answer in (None, activity["answer"][0], [], activity["answer"][:1], [True, 10], [{}, []], activity["answer"] + ["extra"]):
+            self.assertFalse(correct_answer(activity, answer))
 
-    def test_lanterns_validate_solution_and_move_limit(self):
-        panel = ACTIVITIES[3]
-        self.assertTrue(correct_answer(panel, [8, 6, 2, 0]))
-        for moves in ([0], [], [True], [9], [0, 0] * 5):
-            self.assertFalse(correct_answer(panel, moves))
+    def test_each_friend_has_two_questions_with_valid_correct_options(self):
+        for activity in ACTIVITIES:
+            self.assertEqual(activity["kind"], "quiz")
+            self.assertEqual(len(activity["questions"]), 2)
+            self.assertEqual(len(activity["answer"]), 2)
+            for question, answer in zip(activity["questions"], activity["answer"]):
+                self.assertEqual(len(question["options"]), 4)
+                self.assertEqual(len(set(question["options"])), 4)
+                self.assertIn(answer, question["options"])
 
-    def test_lock_has_one_solution_for_its_clues(self):
-        solutions = [f"{a}{b}{c}" for a in range(10) for b in range(10) for c in range(10) if len({a, b, c}) == 3 and a + b + c == 19 and b == a * 2 and c == a + 3]
-        self.assertEqual(solutions, [ACTIVITIES[1]["answer"]])
+    def test_answers_cannot_be_swapped_between_questions(self):
+        activity = ACTIVITIES[0]
+        self.assertTrue(correct_answer(activity, activity["answer"]))
+        self.assertFalse(correct_answer(activity, list(reversed(activity["answer"]))))
 
     def test_locked_activity_cannot_be_skipped(self):
         self.assertEqual(self.answer(6, "florescer").status_code, 403)
 
     def test_wrong_answer_does_not_award_progress(self):
-        response = self.answer(1, "limão")
+        activity = ACTIVITIES[0]
+        response = self.answer(1, ["Uma enguia e um filhote de peixe", activity["answer"][1]])
         self.assertFalse(response.data["correct"])
+        self.assertEqual(response.data["incorrect_questions"], [0])
+        self.assertIsNone(response.data["fragment"])
         self.assertEqual(response.data["journey"]["xp"], 0)
         self.assertEqual(response.data["journey"]["attempts"], 1)
 
@@ -104,11 +112,13 @@ class JourneyTests(APITestCase):
         self.assertEqual(data["xp"], 100)
         self.assertEqual(data["attempts"], 1)
 
-    def test_memory_rejects_duplicate_or_malformed_pairs(self):
+    def test_later_missions_reject_malformed_answers(self):
         self.answer(1, ACTIVITIES[0]["answer"])
         self.answer(2, ACTIVITIES[1]["answer"])
         for answer in (["a1"], [["a1", "a2"]] * 4, [[None, {}]]):
-            self.assertFalse(self.answer(3, answer).data["correct"])
+            response = self.answer(3, answer)
+            self.assertFalse(response.data["correct"])
+            self.assertIsNone(response.data["incorrect_questions"])
 
     def test_progress_is_isolated_by_user(self):
         self.answer(1, ACTIVITIES[0]["answer"])

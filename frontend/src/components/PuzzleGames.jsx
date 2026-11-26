@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { StrawberryMark } from "./Logo";
 
 export function MazeGame({ activity, onAnswer }) {
   const [path, setPath] = useState([activity.start]);
@@ -84,7 +85,7 @@ export function MazeGame({ activity, onAnswer }) {
                 onClick={() => move(r, c)}
               >
                 {player
-                  ? "🍓"
+                  ? <StrawberryMark size={22} className="maze-strawberry" />
                   : tile === "#"
                     ? "🌳"
                     : tile === "X"

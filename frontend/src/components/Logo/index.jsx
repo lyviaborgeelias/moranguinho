@@ -1,22 +1,18 @@
-import { Leaf } from "lucide-react";
+const strawberrySrc = `${import.meta.env.BASE_URL}imagens/marca-moranguinho.png`;
+
+export function StrawberryMark({ size, className }) {
+  return <img src={strawberrySrc} className={className} width={size} height={size} alt="" />;
+}
 
 export default function Logo({ compact = false, light = false }) {
   return (
     <span
       className={`brand ${compact ? "brand--compact" : ""} ${light ? "brand--light" : ""}`}
-      aria-label="Aventuras da Moranguinho"
     >
-      <span className="brand-mark" aria-hidden="true">
-        <Leaf size={18} />
-        <i />
-        <i />
-        <i />
-      </span>
+      <StrawberryMark size={compact ? 34 : 44} className="brand-mark" />
       <span className="brand-copy">
         <small>SEGREDOS DE</small>
-        <strong>
-          Moranguinho<span>♥</span>
-        </strong>
+        <strong>Moranguinho</strong>
       </span>
     </span>
   );

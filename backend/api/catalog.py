@@ -1,62 +1,130 @@
-"""Conteúdo público dos desafios e respostas mantidas somente no servidor."""
+"""Missões das amigas. As respostas e palavras ainda não conquistadas ficam no servidor."""
 import unicodedata
 
+
+def question(prompt, *options):
+    return {"prompt": prompt, "options": list(options)}
+
+
+# Referências para os enredos e os nomes da dublagem:
+# https://www.primevideo.com/-/pt/detail/0S5W7IC5LBM32M4G3XGXHTSPYM
+# https://www.paramountplus.com/shows/strawberry-shortcakes-berry-bitty-adventures/episodes/1/
+# https://www.paramountplus.com/shows/strawberry-shortcakes-berry-bitty-adventures/episodes/2/
 ACTIVITIES = [
-    dict(id=1, title="O labirinto de espinhos", place="Casa da Moranguinho", kind="maze", skill="Estratégia", minutes=4,
-         board=["#######", "#S..#E#", "#.#.#.#", "#X#...#", "#.#X#.#", "#..K..#", "#######"], start=[1, 1],
-         case_file="Dossiê 01 · O labirinto de espinhos",
-         obstacle="Você tem três corações. Cercas bloqueiam a passagem e espinhos tiram um coração.",
-         story="O livro de receitas da festa desapareceu! Moranguinho avistou um envelope atrás das cercas do jardim. Leve-a até a chave e depois ao envelope para começar a investigação.",
-         question="Recupere o envelope sem perder todos os corações.",
-         hint="O corredor da direita leva ao envelope. Busque a chave por baixo; evite as casas marcadas com espinhos.",
-         answer=[[1, 1], [1, 2], [1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [4, 5], [5, 5], [5, 4], [5, 3], [5, 4], [5, 5], [4, 5], [3, 5], [2, 5], [1, 5]], fragment="AMIZADE", x=17, y=66, color="rose", icon="sprout"),
-    dict(id=2, title="O cadeado da despensa", place="Cozinha da Moranguinho", kind="lock", skill="Dedução", minutes=5,
-         lock_clues=["Os três algarismos são diferentes. A soma deles é 19.", "O algarismo do meio é o dobro do primeiro.", "O último algarismo é três unidades maior que o primeiro."],
-         case_file="Dossiê 02 · A receita interrompida",
-         obstacle="Combine as três pistas para descobrir uma única combinação. Gire cada disco do cadeado.",
-         story="O envelope trouxe Moranguinho à cozinha. Na despensa trancada, três anotações da receita escondem a combinação do cadeado. Cruze as informações para recuperar a próxima pista.",
-         question="Qual combinação abre a despensa?",
-         hint="Chame o primeiro algarismo de x. A soma será x + 2x + (x + 3) = 19. Depois confira as três pistas.",
-         answer="487", fragment="MORANGO", x=32, y=36, color="purple", icon="flower"),
-    dict(id=3, title="Memórias das amigas", place="Jardim das Amigas", kind="memory", skill="Memória", minutes=4,
-         case_file="Dossiê 03 · As fotos rasgadas",
-         obstacle="As fotos foram viradas para baixo. Você terá de memorizar posições antes que as pistas desapareçam.",
-         story="Dentro da despensa havia um álbum de frutas com doze cartas viradas. As amigas esconderam a próxima pista entre os pares. Cada tentativa revela apenas duas cartas: memorize bem!",
-         question="Encontre os seis pares em até 14 jogadas.",
-         max_turns=14,
-         cards=[dict(id="a1", symbol="leaf", name="Moranguinho"), dict(id="a2", symbol="leaf", name="Moranguinho"),
-                dict(id="b1", symbol="sun", name="Laranjinha"), dict(id="b2", symbol="sun", name="Laranjinha"),
-                dict(id="c1", symbol="flower", name="Uvinha"), dict(id="c2", symbol="flower", name="Uvinha"),
-                dict(id="d1", symbol="berry", name="Mirtilo"), dict(id="d2", symbol="berry", name="Mirtilo"),
-                dict(id="e1", symbol="cherry", name="Cereja"), dict(id="e2", symbol="cherry", name="Cereja"),
-                dict(id="f1", symbol="lemon", name="Limão"), dict(id="f2", symbol="lemon", name="Limão")],
-         hint="Memorize cada posição. Uma carta repetida pode confirmar uma pista importante.",
-         answer=[["a1", "a2"], ["b1", "b2"], ["c1", "c2"], ["d1", "d2"], ["e1", "e2"], ["f1", "f2"]], fragment="ALEGRIA", x=53, y=60, color="blue", icon="water"),
-    dict(id=4, title="O portão das lanternas", place="Praça da Cidade do Morango", kind="lights", skill="Planejamento", minutes=5,
-         lights=[1, 0, 1, 0, 0, 0, 1, 0, 1], move_limit=8,
-         case_file="Dossiê 04 · O portão das lanternas",
-         obstacle="Cada botão também muda os vizinhos. Você tem oito movimentos para apagar o painel inteiro.",
-         story="As amigas seguiram as pegadas até um portão iluminado. O mecanismo só abre quando todas as lanternas se apagam. Planeje os toques antes de começar.",
-         question="Apague as nove lanternas para liberar a passagem.",
-         hint="Tocar duas vezes na mesma casa desfaz a mudança. Experimente pensar em pares de cantos opostos.",
-         answer=[0, 2, 6, 8], fragment="CARINHO", x=64, y=24, color="gold", icon="clock"),
-    dict(id=5, title="A trilha de migalhas", place="Pomar das Amigas", kind="order", skill="Reconstrução", minutes=4,
-         case_file="Dossiê 05 · A trilha de migalhas",
-         obstacle="As seis placas estão embaralhadas. Mova-as para cima ou para baixo até formar uma rota que respeite todas as pistas.",
-         story="Depois do portão, Moranguinho encontrou seis placas caídas. As anotações na cesta revelam a ordem dos lugares visitados por quem levou o livro. Reconstrua a rota.",
-         question="Organize as seis paradas usando as anotações abaixo.",
-         items=["Pomar", "Casa da árvore", "Praça", "Cozinha", "Jardim", "Ponte"],
-         question_clues=["A trilha começa na cozinha e termina na casa da árvore.", "O jardim vem imediatamente depois da cozinha.", "A praça fica entre a ponte e o pomar, nessa ordem e sem paradas extras."],
-         hint="Fixe cozinha e jardim no começo e casa da árvore no final. Encaixe ponte → praça → pomar no espaço que sobrou.",
-         answer=["cozinha", "jardim", "ponte", "praca", "pomar", "casa da arvore"], fragment="CUIDADO", x=82, y=45, color="green", icon="book"),
-    dict(id=6, title="O segredo da amizade", place="Casa da Árvore", kind="cipher", skill="Decifração", minutes=5,
-         case_file="Dossiê 06 · A mensagem final",
-         obstacle="O bilhete está protegido por uma cifra. Sem decifrar a mensagem, o nome do responsável continuará oculto.",
-         story="Na casa da árvore, Moranguinho encontrou o último bilhete. O autor usou um código para esconder a verdade: cada letra foi deslocada três posições no alfabeto.",
-         question="Descubra a palavra secreta:",
-         cipher="DPLJRV", hint="Volte três letras em cada disco: D → A, P → M. Continue usando o mesmo deslocamento.",
-         revelation="Caso resolvido! As amigas guardaram o livro no cofre para preparar uma festa surpresa para Moranguinho. Os bilhetes eram um convite para a caça ao tesouro. Abra o livro e comemore com elas!",
-         answer="amigos", fragment="AMIGOS", x=84, y=15, color="rose", icon="tree"),
+    dict(id=1, title="A cesta de Laranjinha", place="Jardim da casa", kind="quiz", skill="Memória da série", minutes=3,
+         icon="sprout", color="gold", friend="Laranjinha",
+         story="Dentro da cesta, Laranjinha encontrou um bilhete que lembra dois sustos que ela levou em Tutti-Frutti.",
+         question="Lembre o que aconteceu no riacho e durante o apagão.",
+         questions=[
+             question("O que Laranjinha achou que tocou seu pé no riacho e o que o animal que ela adotou era de verdade?",
+                      "Uma enguia e um filhote de peixe",
+                      "Uma enguia e um girino",
+                      "Uma sanguessuga e um girino",
+                      "Uma sanguessuga e um filhote de peixe"),
+             question("Em ‘Enfrentando seus Medos’, onde as amigas estavam quando a luz acabou e qual criatura assustava Laranjinha?",
+                      "No café, com medo do Galumphalot",
+                      "No salão, com medo de uma enguia",
+                      "No café, com medo de uma enguia",
+                      "No salão, com medo do Galumphalot"),
+         ],
+         hint="No riacho, só depois de adotar o bichinho ela percebeu que ele mudava de forma. O outro susto começou com uma história lida para os Berrykins.",
+         answer=["Uma enguia e um girino", "No salão, com medo do Galumphalot"], fragment="AMIZADE",
+         revelation="Muito bem! No fundo da cesta havia uma palavra: AMIZADE. Laranjinha viu Liminha passando em direção à horta. Vá conversar com ela!"),
+    dict(id=2, title="O cuidado com a horta", place="Horta de Liminha", kind="quiz", skill="Detalhes dos episódios", minutes=3,
+         icon="flower", color="green", friend="Liminha",
+         story="Entre os canteiros, Liminha achou uma pista sobre as aventuras de Gotinha de Limão no jardim e no salão.",
+         question="Relembre os preparativos de Gotinha de Limão para dois eventos da cidade.",
+         questions=[
+             question("Em ‘O Sumiço das Violetas’, que cuidado Gotinha de Limão repetia à noite com as flores do concurso?",
+                      "Cantava para as violetas",
+                      "Girava os vasos de frente para a lua",
+                      "Cobria as flores com redomas de vidro",
+                      "Regava as violetas antes de dormir"),
+             question("Em ‘O Que Mais Importa’, para a inauguração de qual lugar as amigas se arrumavam quando os secadores saíram do controle?",
+                      "Do novo mercado da cidade",
+                      "Do estúdio de dança",
+                      "Do clube de boliche",
+                      "Da boutique de roupas"),
+         ],
+         hint="O ritual da noite era diferente da rega do dia. Já o novo ponto de encontro da cidade tinha pistas para jogar.",
+         answer=["Cantava para as violetas", "Do clube de boliche"], fragment="MORANGO",
+         revelation="Liminha entregou a palavra MORANGO e contou que Uvinha está esperando no pomar."),
+    dict(id=3, title="As descobertas do pomar", place="Pomar das amigas", kind="quiz", skill="Mistérios da série", minutes=3,
+         icon="tree", color="purple", friend="Uvinha",
+         story="Uvinha encontrou um bilhete preso a uma árvore. Ele menciona uma detetive dos livros e um perfume que saiu do controle.",
+         question="Relembre o que aconteceu nos dois mistérios.",
+         questions=[
+             question("Em ‘O Sumiço de Amora Linda’, como Uvinha levou a admiração por Patti Persimmon para fora dos livros?",
+                      "Montou um clube para o público resolver enigmas",
+                      "Escreveu um novo caso inspirado nas amigas",
+                      "Encenou um dos mistérios com os Berrykins",
+                      "Vestiu-se como a detetive e saiu à procura de casos"),
+             question("Em ‘O Perfume Especial’, que mistura caiu no frasco e fez as plantas crescerem depressa?",
+                      "Suco de frutas e orvalho do pomar",
+                      "Brilho dos Berrykins e solução de Berrykin Bloom",
+                      "Pólen das flores e farinha do café",
+                      "Sementes de margarida e água do riacho"),
+         ],
+         hint="Patti inspirou Uvinha a investigar por conta própria. No pomar, foi o vento que juntou o trabalho de quem colhia com o de quem cuidava das flores.",
+         answer=["Vestiu-se como a detetive e saiu à procura de casos", "Brilho dos Berrykins e solução de Berrykin Bloom"], fragment="ALEGRIA",
+         revelation="Mistérios desvendados! A palavra é ALEGRIA. Siga pelo caminho do bosque para encontrar Amora."),
+    dict(id=4, title="Os sons do bosque", place="Bosque de Amora", kind="quiz", skill="Causa e consequência", minutes=3,
+         icon="water", color="blue", friend="Amora",
+         story="No bosque, Amora guardou um bilhete sobre duas confusões de Tutti-Frutti: uma no jardim e outra na troca de presentes.",
+         question="Descubra o que deu errado em cada episódio.",
+         questions=[
+             question("Quando as sementes de Amora Linda brotaram em menos de um dia, o que ela esperava plantar e o que veio por engano no pacote?",
+                      "Violetas e sementes de margarida",
+                      "Margaridas e sementes de girassol",
+                      "Margaridas e milho de pipoca",
+                      "Violetas e milho de pipoca"),
+             question("Na troca de presentes da Primeira Geada, por que o presente de Amora Linda acabou passando de mão em mão?",
+                      "Ela escolheu algo que ela mesma queria ganhar",
+                      "Ela trocou a etiqueta com a de outro presente",
+                      "Ela confundiu o horário da entrega",
+                      "Ela separou os embrulhos pela ordem errada"),
+         ],
+         hint="O problema da plantação começou com a embalagem das sementes. Na troca da Primeira Geada, pense em quem teve seus gostos levados em conta.",
+         answer=["Margaridas e milho de pipoca", "Ela escolheu algo que ela mesma queria ganhar"], fragment="CARINHO",
+         revelation="Amora entregou a palavra CARINHO. Atravesse a ponte do riacho: Cerejinha está do outro lado."),
+    dict(id=5, title="O bilhete da ponte", place="Jardim da ponte", kind="quiz", skill="Música e bastidores", minutes=3,
+         icon="clock", color="rose", friend="Cerejinha",
+         story="Cerejinha achou um bilhete que lembra sua chegada a Tutti-Frutti e os primeiros ensaios com suas alunas.",
+         question="Lembre como Cerejinha chegou à cidade e o que aconteceu nos preparativos para o recital.",
+         questions=[
+             question("Em ‘Megaestrela Pop’, para qual evento as amigas convidaram Cerejinha como surpresa para Moranguinho?",
+                      "O desfile do festival da cidade",
+                      "A inauguração do mercado",
+                      "A apresentação do concurso de talentos",
+                      "O baile da Primeira Geada"),
+             question("Quando Cerejinha organizou um recital para suas alunas, por que Ameixinha tentou adiá-lo?",
+                      "Queria trocar a música depois do último ensaio",
+                      "Precisava buscar um instrumento emprestado",
+                      "Queria treinar um novo dueto com Cerejinha",
+                      "Sentiu medo de se apresentar no palco"),
+         ],
+         hint="O primeiro convite celebrava a abertura de um espaço novo. Para entender Ameixinha, pense na diferença entre ensaiar e tocar para uma plateia.",
+         answer=["A inauguração do mercado", "Sentiu medo de se apresentar no palco"], fragment="CUIDADO",
+         revelation="Você encontrou a palavra CUIDADO! Cerejinha sorriu ao falar da festa. Framboesa está na clareira e tem a última pista."),
+    dict(id=6, title="O segredo das amigas", place="Clareira da amizade", kind="quiz", skill="Moda e amizade", minutes=3,
+         icon="book", color="rose", friend="Framboesa",
+         story="O último bilhete lembra duas vezes em que os trabalhos de Framboesinha puseram à prova sua relação com as amigas.",
+         question="Relembre a confusão do festival e a decisão sobre sua carreira.",
+         questions=[
+             question("Em ‘A União Faz a Força’, qual criação Framboesinha suspeitou que as amigas tinham copiado?",
+                      "O desenho que fez em sua lanterna",
+                      "O bordado que fez no vestido da festa",
+                      "O enfeite que fez para a entrada do baile",
+                      "A estampa que fez para a decoração da praça"),
+             question("Que proposta Framboesinha recebeu de uma pessoa que procurava novos talentos, antes de decidir ficar em Tutti-Frutti?",
+                      "Criar figurinos para a turnê de Cerejinha",
+                      "Assumir a decoração dos eventos do mercado",
+                      "Criar uma coleção de roupas com glitter na cidade grande",
+                      "Abrir uma escola de moda na cidade grande"),
+         ],
+         hint="Pense em algo que cada amiga preparou para levar ao festival. Na segunda história, a proposta envolvia sair da cidade e continuar desenhando roupas.",
+         answer=["O desenho que fez em sua lanterna", "Criar uma coleção de roupas com glitter na cidade grande"], fragment="AMIGOS",
+         revelation="Framboesa juntou as seis palavras e trouxe o livro de volta. Há uma última mensagem esperando por você na clareira."),
 ]
 
 
@@ -68,40 +136,17 @@ def normalize(value):
     return value
 
 
+def incorrect_questions(activity, answer):
+    if not isinstance(answer, list) or len(answer) != len(activity["questions"]) or any(not isinstance(value, str) for value in answer):
+        return None
+    return [
+        index for index, (value, expected) in enumerate(zip(normalize(answer), normalize(activity["answer"])))
+        if value != expected
+    ]
+
+
 def correct_answer(activity, answer):
-    if activity["kind"] == "maze":
-        if not isinstance(answer, list) or not 2 <= len(answer) <= 500:
-            return False
-        previous = None
-        has_key = False
-        for position in answer:
-            if not isinstance(position, list) or len(position) != 2 or any(type(v) is not int for v in position):
-                return False
-            r, c = position
-            if not 0 <= r < len(activity["board"]) or not 0 <= c < len(activity["board"][r]):
-                return False
-            tile = activity["board"][r][c]
-            if tile in "#X" or (previous is None and position != activity["start"]):
-                return False
-            if previous is not None and abs(r - previous[0]) + abs(c - previous[1]) != 1:
-                return False
-            if tile == "E" and not has_key:
-                return False
-            has_key = has_key or tile == "K"
-            previous = position
-        return has_key and activity["board"][previous[0]][previous[1]] == "E"
-    if activity["kind"] == "lights":
-        if not isinstance(answer, list) or not 1 <= len(answer) <= activity["move_limit"] or any(type(i) is not int or not 0 <= i < 9 for i in answer):
-            return False
-        cells = activity["lights"][:]
-        for index in answer:
-            cells = [1 - value if abs(i // 3 - index // 3) + abs(i % 3 - index % 3) <= 1 else value for i, value in enumerate(cells)]
-        return not any(cells)
-    if activity["kind"] == "memory":
-        if not isinstance(answer, list) or any(not isinstance(pair, list) or len(pair) != 2 or any(not isinstance(card, str) for card in pair) for pair in answer):
-            return False
-        return sorted(sorted(pair) for pair in answer) == sorted(sorted(pair) for pair in activity["answer"])
-    return normalize(answer) == normalize(activity["answer"])
+    return incorrect_questions(activity, answer) == []
 
 
 def public_activity(activity, completed):
@@ -109,6 +154,5 @@ def public_activity(activity, completed):
     payload["status"] = "completed" if activity["id"] in completed else "available" if activity["id"] == 1 or activity["id"] - 1 in completed else "locked"
     if activity["id"] in completed:
         payload["fragment"] = activity["fragment"]
-        if "revelation" in activity:
-            payload["revelation"] = activity["revelation"]
+        payload["revelation"] = activity["revelation"]
     return payload

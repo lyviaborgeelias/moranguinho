@@ -10,6 +10,9 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:5180",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
+    launchOptions: {
+      args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+    },
   },
   projects: [
     {

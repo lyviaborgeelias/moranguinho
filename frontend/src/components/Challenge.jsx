@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
+  ArrowLeft,
   ArrowRight,
   ArrowUp,
+  BookOpen,
   Check,
   HelpCircle,
   RotateCcw,
   Sparkles,
+  Star,
   ShieldAlert,
   X,
 } from "lucide-react";
@@ -14,6 +17,9 @@ import Modal from "./Modal";
 import { destinationIcons } from "../data/activities";
 import api, { errorMessage } from "../services/api";
 import { DialGame, LightsGame, MazeGame } from "./PuzzleGames";
+import { FriendPortrait } from "./Exploration";
+import { StrawberryMark } from "./Logo";
+import { FRIENDS } from "../game/world";
 
 function shuffled(array) {
   const next = [...array];
@@ -27,7 +33,7 @@ function shuffled(array) {
 function MemoryBoard({ cards, maxTurns = 14, onAnswer }) {
   const pairCount = cards.length / 2;
   const fruitSymbols = {
-    leaf: "🍓",
+    leaf: <StrawberryMark size={30} />,
     sun: "🍊",
     flower: "🍇",
     berry: "🫐",
@@ -131,8 +137,9 @@ function MemoryBoard({ cards, maxTurns = 14, onAnswer }) {
   );
 }
 
-export default function Challenge({ activity, fragments, onClose, onUpdate }) {
+export default function Challenge({ activity, fragments, onClose, onUpdate, onNext, onFinale }) {
   const Icon = destinationIcons[activity.icon];
+  const friend = FRIENDS.find((item) => item.id === activity.id);
   const [answer, setAnswer] = useState(
     activity.kind === "quiz" ? [] : activity.kind === "order" ? [...activity.items] : "",
   );
@@ -142,10 +149,17 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
   const [hint, setHint] = useState(false);
   const [inspectedClues, setInspectedClues] = useState([]);
   const [reward, setReward] = useState(null);
+  const [earned, setEarned] = useState(false);
+  const [step, setStep] = useState(0);
+  const [review, setReview] = useState([]);
+  const quiz = activity.kind === "quiz";
+  const question = quiz ? activity.questions[step] : null;
+  const hasNextQuestion = quiz && step < activity.questions.length - 1;
+  const unanswered = quiz ? activity.questions.findIndex((_, index) => !answer[index]) : -1;
   const valid = ["maze", "lights"].includes(activity.kind)
     ? Array.isArray(answer) && answer.length > 0
-    : activity.kind === "quiz"
-      ? answer.filter(Boolean).length === activity.questions.length
+    : quiz
+      ? unanswered === -1
       : activity.kind === "memory"
         ? Array.isArray(answer) && answer.length === activity.cards.length / 2
         : activity.kind === "order"
@@ -156,6 +170,12 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
     setAnswer(value);
     setFeedback("");
     setError("");
+  }
+  function selectOption(option) {
+    const next = [...answer];
+    next[step] = option;
+    setReview((current) => current.filter((index) => index !== step));
+    choose(next);
   }
   function move(index, direction) {
     const next = [...answer];
@@ -173,11 +193,18 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
     setFeedback("");
     try {
       const { data } = await api.post(`/activities/${activity.id}/answer/`, { answer });
+      setEarned(data.correct && !data.already_completed);
       onUpdate(data.journey);
       if (data.correct) {
         setReward(data.fragment);
         setFeedback("correct");
-      } else setFeedback("wrong");
+      } else {
+        setFeedback("wrong");
+        if (quiz && data.incorrect_questions?.length) {
+          setReview(data.incorrect_questions);
+          setStep(data.incorrect_questions[0]);
+        }
+      }
     } catch (requestError) {
       setError(errorMessage(requestError));
     } finally {
@@ -186,24 +213,33 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
   }
 
   return (
-    <Modal title={activity.title} onClose={onClose} wide>
+    <Modal title={activity.title} onClose={onClose} wide className="modal--challenge">
+      <div className="challenge-level">
+        FASE {String(activity.id).padStart(2, "0")} <span>/ 06</span>
+      </div>
       <div className={`challenge-heading color-${activity.color}`}>
         <span className="destination-symbol">
-          <Icon size={23} />
+          {activity.kind === "quiz" ? <FriendPortrait friend={friend} /> : <Icon size={23} />}
         </span>
         <div>
           <span className="eyebrow">
-            {activity.case_file || `DOSSIÊ 0${activity.id}`} · {activity.skill}
+            {activity.friend || activity.case_file || `MISSÃO 0${activity.id}`} · {activity.skill}
           </span>
           <h2>{activity.title}</h2>
         </div>
       </div>
       {feedback === "correct" ? (
-        <div className="reward-view">
+        <div className="reward-view" role="status">
+          <div className="reward-stars" aria-hidden="true">
+            <Star fill="currentColor" />
+            <Star fill="currentColor" />
+            <Star fill="currentColor" />
+          </div>
           <div className="reward-emblem">
             <Sparkles size={35} />
           </div>
           <span className="eyebrow">PISTA CONFIRMADA</span>
+          <span className="reward-title">Você mandou bem!</span>
           <h3>{reward}</h3>
           <p>
             {activity.revelation ||
@@ -211,24 +247,49 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
           </p>
           <div className="reward-points">
             <Check size={15} />
-            {activity.status === "completed" ? "Destino concluído" : "+100 pontos de exploração"}
+            {earned ? "+100 XP · Nova pista na coleção!" : "Destino concluído"}
           </div>
-          <button className="button button--dark button--full" onClick={onClose}>
-            Voltar ao mapa <ArrowRight size={17} />
-          </button>
+          {earned && (
+            <div
+              className="reward-collection"
+              aria-label={`${fragments.length} de 6 palavras coletadas`}
+            >
+              {Array.from({ length: 6 }, (_, i) => (
+                <span key={i} className={i < fragments.length ? "is-filled" : ""}>
+                  {i < fragments.length ? <Check size={13} /> : i + 1}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="reward-actions">
+            {earned && (onNext || onFinale) && (
+              <button className="button button--primary" onClick={onFinale || onNext}>
+                {onFinale ? "Participar da festa" : "Seguir para o próximo encontro"}{" "}
+                <ArrowRight size={17} />
+              </button>
+            )}
+            <button className="button button--outline" onClick={onClose}>
+              Voltar ao jardim
+            </button>
+          </div>
         </div>
       ) : (
         <>
-          <p className="challenge-story">{activity.story}</p>
-          {activity.obstacle && (
-            <div className="obstacle-card">
-              <ShieldAlert size={18} />
-              <div>
-                <span>OBSTÁCULO DO CASO</span>
-                <p>{activity.obstacle}</p>
+          <details className="challenge-brief">
+            <summary>
+              <BookOpen size={16} /> História e instruções da missão <span>+</span>
+            </summary>
+            <p className="challenge-story">{activity.story}</p>
+            {activity.obstacle && (
+              <div className="obstacle-card">
+                <ShieldAlert size={18} />
+                <div>
+                  <span>OBSTÁCULO DO CASO</span>
+                  <p>{activity.obstacle}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </details>
           {activity.clues && (
             <div className="clue-panel">
               <div className="clue-panel-heading">
@@ -340,33 +401,52 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
             {activity.kind === "memory" && (
               <MemoryBoard cards={activity.cards} maxTurns={activity.max_turns} onAnswer={choose} />
             )}
-            {activity.kind === "quiz" && (
-              <div className="quiz-list">
-                {activity.questions.map((question, index) => (
-                  <fieldset key={question.prompt}>
-                    <legend>
-                      <span>0{index + 1}</span>
-                      {question.prompt}
-                    </legend>
-                    <div className="quiz-options">
-                      {question.options.map((option) => (
-                        <button
-                          type="button"
-                          key={option}
-                          className={`choice ${answer[index] === option ? "is-selected" : ""}`}
-                          aria-pressed={answer[index] === option}
-                          onClick={() => {
-                            const next = [...answer];
-                            next[index] = option;
-                            choose(next);
-                          }}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                ))}
+            {question && (
+              <div className="quiz-list quiz-round">
+                <div className="quiz-steps" role="group" aria-label="Etapas da missão">
+                  {activity.questions.map((item, index) => (
+                    <button
+                      key={item.prompt}
+                      type="button"
+                      aria-pressed={step === index}
+                      className={review.includes(index) ? "needs-review" : ""}
+                      disabled={busy}
+                      onClick={() => setStep(index)}
+                    >
+                      {review.includes(index) ? (
+                        <RotateCcw size={14} />
+                      ) : answer[index] ? (
+                        <Check size={14} />
+                      ) : (
+                        <span>{index + 1}</span>
+                      )}
+                      Pergunta {index + 1}
+                    </button>
+                  ))}
+                </div>
+                <fieldset key={question.prompt} disabled={busy}>
+                  <legend>{question.prompt}</legend>
+                  <div className="quiz-options">
+                    {question.options.map((option, optionIndex) => (
+                      <button
+                        type="button"
+                        key={option}
+                        className={`choice ${answer[step] === option ? "is-selected" : ""}`}
+                        aria-pressed={answer[step] === option}
+                        onClick={() => selectOption(option)}
+                      >
+                        <span className="answer-letter" aria-hidden="true">
+                          {answer[step] === option ? (
+                            <Check size={15} />
+                          ) : (
+                            String.fromCharCode(65 + optionIndex)
+                          )}
+                        </span>
+                        <span>{option}</span>
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
               </div>
             )}
             {activity.kind === "order" && (
@@ -413,7 +493,11 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
             {feedback === "wrong" && (
               <div className="notice notice--error" role="status">
                 <RotateCcw size={17} />
-                Essa pista não fecha o caso. Revise as evidências e tente novamente.
+                {review.length === 1
+                  ? `Revise a pergunta ${review[0] + 1}. Sua outra resposta foi mantida.`
+                  : review.length
+                    ? "Revise as perguntas marcadas. Você pode consultar a dica e tentar novamente."
+                    : "Ainda não foi dessa vez. Abra a pista e tente novamente."}
               </div>
             )}
             {error && (
@@ -432,15 +516,41 @@ export default function Challenge({ activity, fragments, onClose, onUpdate }) {
                 <HelpCircle size={16} />
                 {hint ? "Fechar pista" : "Abrir pista"}
               </button>
-              <button className="button button--primary" disabled={!valid || busy}>
-                {busy ? (
-                  <span className="spinner" />
-                ) : (
-                  <>
-                    Confirmar pista <ArrowRight size={16} />
-                  </>
-                )}
-              </button>
+              {hasNextQuestion ? (
+                <button
+                  key="next-question"
+                  type="button"
+                  className="button button--primary"
+                  disabled={!answer[step] || busy}
+                  onClick={() => setStep(step + 1)}
+                >
+                  Próxima pergunta <ArrowRight size={16} />
+                </button>
+              ) : quiz && unanswered !== -1 && Boolean(answer[step]) ? (
+                <button
+                  key="unanswered-question"
+                  type="button"
+                  className="button button--primary"
+                  onClick={() => setStep(unanswered)}
+                >
+                  Voltar à pergunta {unanswered + 1} <ArrowLeft size={16} />
+                </button>
+              ) : (
+                <button
+                  key="confirm-answers"
+                  type="submit"
+                  className="button button--primary"
+                  disabled={!valid || busy}
+                >
+                  {busy ? (
+                    <span className="spinner" />
+                  ) : (
+                    <>
+                      Confirmar pista <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </form>
         </>

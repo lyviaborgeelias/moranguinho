@@ -3,33 +3,36 @@ import {
   ArrowRight,
   BookOpen,
   Check,
-  ChevronRight,
   Compass,
   Download,
-  Flag,
   HelpCircle,
-  Leaf,
   LockKeyhole,
-  MapPinned,
-  MoveHorizontal,
-  Minus,
-  Plus,
+  Footprints,
   RotateCcw,
+  Star,
+  X,
+  Home as HomeIcon,
   Settings2,
-  Sparkles,
   Trophy,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import Logo from "../components/Logo";
+import Logo, { StrawberryMark } from "../components/Logo";
 import Modal from "../components/Modal";
 import Challenge from "../components/Challenge";
+import { Certificate, Finale } from "../components/Finale";
 import { useAuth } from "../context/AuthContext";
 import { achievements, destinationIcons } from "../data/activities";
 import api, { errorMessage } from "../services/api";
+import { FullscreenButton, GameGuide } from "../components/GameChrome";
+import Exploration, { FriendPortrait } from "../components/Exploration";
+import { FRIENDS } from "../game/world";
 import "../styles/Adventure.css";
+import "../styles/Challenge.css";
+import "../styles/Exploration.css";
+import "../styles/QuestPolish.css";
 
 const views = [
-  { id: "map", label: "Mapa do jardim", icon: MapPinned },
+  { id: "world", label: "Explorar", icon: Footprints },
   { id: "journal", label: "Meu diário", icon: BookOpen },
   { id: "achievements", label: "Conquistas", icon: Trophy },
   { id: "profile", label: "Meu perfil", icon: Settings2 },
@@ -60,7 +63,7 @@ function Profile({ user, updateUser }) {
     <div className="profile-layout">
       <article className="paper-card">
         <span className="eyebrow">IDENTIDADE DE EXPLORADOR</span>
-        <h2>Sobre você.</h2>
+        <h2>Nome no certificado</h2>
         <form onSubmit={(event) => save(event)}>
           <label className="form-label">
             Seu nome
@@ -72,12 +75,6 @@ function Profile({ user, updateUser }) {
                 onChange={(event) => setName(event.target.value)}
                 autoComplete="name"
               />
-            </span>
-          </label>
-          <label className="form-label">
-            E-mail
-            <span className="input-wrap">
-              <input value={user.email} readOnly autoComplete="email" />
             </span>
           </label>
           <button className="button button--dark" disabled={busy}>
@@ -104,28 +101,23 @@ function Profile({ user, updateUser }) {
 export default function Adventure() {
   const { user, updateUser } = useAuth();
   const [params, setParams] = useSearchParams();
-  const view = views.some((item) => item.id === params.get("aba")) ? params.get("aba") : "map";
+  const view = views.some((item) => item.id === params.get("aba")) ? params.get("aba") : "world";
   const [journey, setJourney] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
-  const [zoom, setZoom] = useState(1);
+  const [missionId, setMissionId] = useState(null);
+  const [followRequest, setFollowRequest] = useState(null);
+  const [resetKey, setResetKey] = useState(0);
   const [info, setInfo] = useState(false);
   const [reset, setReset] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
-  const [certificate, setCertificate] = useState(false);
-  const selectedId = Number(params.get("atividade"));
+  const [ending, setEnding] = useState(null);
   const selected = journey?.activities.find(
-    (item) => item.id === selectedId && item.status !== "locked",
+    (item) => item.id === missionId && item.status !== "locked",
   );
-  const next = journey?.activities.find((item) => item.status === "available");
   const complete = journey?.completed.length === 6;
-  const closeActivity = useCallback(() => {
-    setParams((current) => {
-      const nextParams = new URLSearchParams(current);
-      nextParams.delete("atividade");
-      return nextParams;
-    });
-  }, [setParams]);
+  const next = journey?.activities.find((activity) => activity.status === "available");
+  const closeActivity = useCallback(() => setMissionId(null), []);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -144,17 +136,27 @@ export default function Adventure() {
   }, [load]);
 
   function tab(id) {
-    setParams(id === "map" ? {} : { aba: id });
+    setParams(id === "world" ? {} : { aba: id });
   }
   function open(activity) {
     if (activity.status === "locked") return;
-    setParams({ atividade: String(activity.id) });
+    setMissionId(null);
+    tab("world");
+    setFollowRequest((current) => ({ id: activity.id, version: (current?.version || 0) + 1 }));
+  }
+  function openFinale() {
+    setMissionId(null);
+    setEnding("party");
   }
   async function restart() {
     setResetBusy(true);
     try {
       const { data } = await api.delete("/journey/", { data: { confirm: true } });
       setJourney(data);
+      setMissionId(null);
+      setFollowRequest(null);
+      setEnding(null);
+      setResetKey((value) => value + 1);
       setReset(false);
       setParams({});
     } catch (requestError) {
@@ -166,511 +168,282 @@ export default function Adventure() {
   }
 
   return (
-    <div className="app-layout">
-      <aside className="app-sidebar">
-        <Link className="sidebar-brand" to="/">
-          <Logo />
-        </Link>
-        <span className="sidebar-section-label">SEU ESPAÇO DE DESCOBERTAS</span>
-        <nav className="sidebar-nav" aria-label="Navegação da aventura">
+    <div className="game-shell">
+      <header className="game-hud-bar">
+        <button
+          className="player-badge"
+          onClick={() => tab("profile")}
+          aria-label="Abrir meu perfil"
+        >
+          <span className="player-portrait" aria-hidden="true">
+            <StrawberryMark size={40} />
+          </span>
+          <span>
+            <small>JOGANDO COM MORANGUINHO</small>
+            <strong>{user.name.split(" ")[0]}</strong>
+          </span>
+          <span className="player-level" title="Nível de exploração">
+            {Math.min((journey?.completed.length || 0) + 1, 6)}
+          </span>
+        </button>
+        <div className="hud-progress">
+          <span>
+            <Star size={15} fill="currentColor" /> {journey?.xp || 0} <small>XP</small>
+          </span>
+          <div
+            className="progress-track"
+            role="progressbar"
+            aria-label="Progresso da jornada"
+            aria-valuenow={journey?.percent || 0}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <i style={{ width: `${journey?.percent || 0}%` }} />
+          </div>
+          <small>{journey?.completed.length || 0} / 6 fases</small>
+        </div>
+        <div className="game-tools">
+          <span className="save-indicator" role="status">
+            <span className="status-dot" />
+            {busy ? "Carregando…" : error ? "Sem conexão" : "Jornada salva"}
+          </span>
+          <button
+            className="game-tool"
+            onClick={() => setInfo(true)}
+            aria-label="Como jogar"
+            title="Como jogar"
+          >
+            <HelpCircle size={20} />
+          </button>
+          <FullscreenButton />
+          <Link className="game-tool" to="/" aria-label="Tela inicial" title="Tela inicial">
+            <HomeIcon size={19} />
+          </Link>
+        </div>
+      </header>
+      <main className={`game-stage ${view !== "world" ? "game-stage--menu" : ""}`}>
+        {journey && (
+          <Exploration
+            activities={journey.activities}
+            paused={view !== "world" || Boolean(selected) || info || reset || Boolean(ending)}
+            followRequest={followRequest}
+            resetKey={resetKey}
+            onMission={setMissionId}
+            onFinale={openFinale}
+          />
+        )}
+        {error && (
+          <div className="world-error notice notice--error" role="alert">
+            {error}
+            <button className="button button--small button--outline" onClick={load}>
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        {busy && !journey && (
+          <div className="world-loading">
+            <span className="spinner" />
+            <h1>Abrindo o jardim…</h1>
+            <p>Uma nova descoberta está logo ali.</p>
+          </div>
+        )}
+        {journey && view !== "world" && (
+          <section
+            className={`game-menu game-menu--${view}`}
+            aria-label={views.find((item) => item.id === view).label}
+          >
+            <header className="game-menu-heading">
+              <div>
+                <span className="eyebrow">
+                  {view === "journal"
+                    ? "INVENTÁRIO DE DESCOBERTAS"
+                    : view === "achievements"
+                      ? "SEU SALÃO DE TROFÉUS"
+                      : "FICHA DO AVENTUREIRO"}
+                </span>
+                <h1>
+                  {view === "journal"
+                    ? "Meu diário"
+                    : view === "achievements"
+                      ? "Conquistas"
+                      : "Meu perfil"}
+                </h1>
+              </div>
+              <button
+                className="icon-button"
+                aria-label="Voltar ao jardim"
+                onClick={() => tab("world")}
+              >
+                <X size={19} />
+              </button>
+            </header>
+            {view === "journal" && (
+              <>
+                <div className="journal-banner">
+                  <BookOpen size={30} />
+                  <div>
+                    <span className="eyebrow">CADERNO DE EVIDÊNCIAS</span>
+                    <h2>
+                      {complete
+                        ? "A amizade faz o jardim florescer."
+                        : "Uma história que se revela aos poucos."}
+                    </h2>
+                    <div className="fragment-strip">
+                      {journey.activities.map((activity) => (
+                        <span
+                          key={activity.id}
+                          className={activity.fragment ? "" : "fragment-missing"}
+                        >
+                          {activity.fragment || "?"}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="journal-grid journal-meetings">
+                  {journey.activities.map((activity) => {
+                    const Icon = destinationIcons[activity.icon];
+                    const friend = FRIENDS.find((item) => item.id === activity.id);
+                    return (
+                      <article
+                        key={activity.id}
+                        className={`journal-card paper-card color-${activity.color} ${activity.status === "completed" ? "" : "journal-empty"}`}
+                      >
+                        <header className="journal-meeting-heading">
+                          <span className="destination-symbol">
+                            {friend ? <FriendPortrait friend={friend} /> : <Icon size={23} />}
+                          </span>
+                          <div>
+                            <span className="eyebrow">{activity.place}</span>
+                            <h2>{activity.friend ?? activity.title}</h2>
+                          </div>
+                        </header>
+                        <p>
+                          {activity.status === "completed"
+                            ? activity.revelation
+                            : activity.status === "available"
+                              ? activity.story
+                              : "Desbloqueie este encontro ao encontrar a pista anterior."}
+                        </p>
+                        {activity.fragment ? (
+                          <span className="collected-fragment">
+                            {activity.fragment}
+                            <Check size={14} />
+                          </span>
+                        ) : activity.status === "available" ? (
+                          <button className="text-action" onClick={() => open(activity)}>
+                            Visitar {activity.friend} <ArrowRight size={14} />
+                          </button>
+                        ) : (
+                          <span className="journal-lock">
+                            <LockIcon size={14} /> Encontro bloqueado
+                          </span>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {view === "achievements" && (
+              <>
+                <div className="achievement-summary paper-card">
+                  <span className="achievement-trophy">
+                    <Trophy size={32} />
+                  </span>
+                  <div>
+                    <span className="eyebrow">SUA COLEÇÃO DE DESCOBERTAS</span>
+                    <h2>{journey.xp} pontos de exploração.</h2>
+                    <p>
+                      {
+                        achievements.filter((item) => journey.completed.length >= item.threshold)
+                          .length
+                      }{" "}
+                      de {achievements.length} conquistas desbloqueadas · {journey.attempts}{" "}
+                      tentativas na jornada
+                    </p>
+                  </div>
+                  {complete && (
+                    <div className="achievement-actions">
+                      <button className="button button--primary" onClick={openFinale}>
+                        Festa das amigas <Trophy size={16} />
+                      </button>
+                      <button
+                        className="button button--outline"
+                        onClick={() => setEnding("certificate")}
+                      >
+                        Meu certificado <Download size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="achievement-grid">
+                  {achievements.map(({ id, title, text, threshold, icon: Icon }) => {
+                    const unlocked = journey.completed.length >= threshold;
+                    return (
+                      <article
+                        key={id}
+                        className={`achievement-card paper-card ${unlocked ? "is-unlocked" : ""}`}
+                      >
+                        <span className="achievement-emblem">
+                          <Icon size={35} strokeWidth={1.4} />
+                        </span>
+                        <span className="eyebrow">
+                          {unlocked ? "CONQUISTA DESBLOQUEADA" : "UM NOVO OBJETIVO"}
+                        </span>
+                        <h2>{title}</h2>
+                        <p>{text}</p>
+                        <span className="achievement-status">
+                          {unlocked ? (
+                            <>
+                              <Check size={14} /> Conquistado
+                            </>
+                          ) : (
+                            <>
+                              <LockIcon size={14} />
+                              {Math.min(journey.completed.length, threshold)} / {threshold} destinos
+                            </>
+                          )}
+                        </span>
+                      </article>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            {view === "profile" && <Profile user={user} updateUser={updateUser} />}
+
+            {view === "profile" && (
+              <button className="restart-journey" onClick={() => setReset(true)}>
+                <RotateCcw size={15} /> Reiniciar jornada
+              </button>
+            )}
+          </section>
+        )}
+      </main>
+      <footer className="game-bottom-bar">
+        <span className="game-bottom-hint">
+          <Compass size={16} />{" "}
+          {complete ? "O jardim está em festa!" : "Toda grande aventura começa com um passo."}
+        </span>
+        <nav className="game-dock" aria-label="Navegação da aventura">
           {views.map(({ id, label, icon: Icon }) => (
-            <button key={id} className={view === id ? "active" : ""} onClick={() => tab(id)}>
-              <Icon size={18} strokeWidth={1.7} />
+            <button
+              key={id}
+              className={view === id ? "active" : ""}
+              onClick={() => tab(id)}
+              aria-pressed={view === id}
+            >
+              <Icon size={23} />
               <span>{label}</span>
-              {view === id && <span className="nav-active-dot" />}
+              {id === "journal" && <small>{journey?.completed.length || 0}/6</small>}
             </button>
           ))}
         </nav>
-        <div className="sidebar-story">
-          <span className="sidebar-story-icon">
-            <Leaf size={22} />
-          </span>
-          <span className="eyebrow">UM PEQUENO LEMBRETE</span>
-          <p>
-            Grandes descobertas
-            <br />
-            começam com
-            <br />
-            <em>pequenos passos.</em>
-          </p>
-          <small>— Diário da Moranguinho</small>
-        </div>
-        <div className="sidebar-bottom">
-          <button onClick={() => setInfo(true)}>
-            <HelpCircle size={16} /> Como explorar
-          </button>
-          <span className="sidebar-local-note">Jornada local · salva automaticamente</span>
-          <span>UM CONVITE À CURIOSIDADE · 2026</span>
-        </div>
-      </aside>
-      <div className="app-main">
-        <header className="app-topbar">
-          <span>
-            <Compass size={16} /> Jardim da Moranguinho <ChevronRight size={13} />
-            <strong>{views.find((item) => item.id === view).label}</strong>
-          </span>
-          <div className="topbar-account">
-            <span className="sync-status">
-              <span className="status-dot" />
-              {busy ? "Carregando" : error ? "Conexão pendente" : "Progresso salvo"}
-            </span>
-            <button
-              className="account-avatar"
-              onClick={() => tab("profile")}
-              aria-label="Abrir meu perfil"
-            >
-              {user.name?.charAt(0).toUpperCase() || "A"}
-            </button>
-          </div>
-        </header>
-        <main className="dashboard">
-          <div className="dashboard-heading">
-            <div>
-              <span className="eyebrow">
-                {view === "map" ? "DOSSIÊ ABERTO · O CASO DO JARDIM" : "CADA PISTA CONTA"}
-              </span>
-              <h1>
-                {view === "map" ? (
-                  <>
-                    Seu dossiê. <em>Seu mistério.</em>
-                  </>
-                ) : view === "journal" ? (
-                  <>
-                    Páginas da <em>sua jornada.</em>
-                  </>
-                ) : view === "achievements" ? (
-                  <>
-                    Pequenos passos. <em>Grandes conquistas.</em>
-                  </>
-                ) : (
-                  <>
-                    Seu espaço no <em>jardim.</em>
-                  </>
-                )}
-              </h1>
-              <p>
-                {view === "map"
-                  ? `Olá, ${user.name.split(" ")[0]}! O jardim tem histórias esperando por você.`
-                  : view === "journal"
-                    ? "As mensagens que você encontrou ficam guardadas aqui."
-                    : view === "achievements"
-                      ? "Cada destino explorado deixa uma marca na sua história."
-                      : "Escolha como você quer ser chamado nesta aventura."}
-              </p>
-            </div>
-            <span className="chapter-label">
-              <span>CASO PRINCIPAL</span>
-              <strong>01 — 06</strong>
-            </span>
-          </div>
-          {error && (
-            <div className="dashboard-error notice notice--error" role="alert">
-              {error}
-              <button className="button button--small button--outline" onClick={load}>
-                Tentar novamente
-              </button>
-            </div>
-          )}
-          {busy && !journey ? (
-            <div className="content-loading">
-              <span className="spinner" /> Abrindo o mapa da Moranguinho…
-            </div>
-          ) : (
-            journey && (
-              <>
-                {view === "map" && (
-                  <>
-                    <section className="case-progress" aria-label="Fases da investigação">
-                      <div>
-                        <span className="eyebrow">O LIVRO DESAPARECIDO</span>
-                        <h2>
-                          {complete
-                            ? "Mistério resolvido!"
-                            : `Fase ${journey.completed.length + 1} de 6`}
-                        </h2>
-                        <p>
-                          {complete
-                            ? "As amigas deixaram uma surpresa no cofre. Você venceu todos os obstáculos!"
-                            : "Recupere o livro de receitas da Moranguinho. Cada vitória abre uma nova parte do jardim."}
-                        </p>
-                      </div>
-                      <div className="phase-track">
-                        {journey.activities.map((activity) => (
-                          <button
-                            type="button"
-                            key={activity.id}
-                            className={`phase-step phase-${activity.status}`}
-                            disabled={activity.status === "locked"}
-                            onClick={() => open(activity)}
-                            aria-label={`Fase ${activity.id}: ${activity.title}`}
-                            aria-current={activity.status === "available" ? "step" : undefined}
-                          >
-                            {activity.status === "completed" ? (
-                              <Check size={17} />
-                            ) : activity.status === "locked" ? (
-                              <LockIcon size={15} />
-                            ) : (
-                              activity.id
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </section>
-                    <div className="dashboard-grid">
-                      <section className="map-card">
-                        <div className="map-card-heading">
-                          <div>
-                            <MapPinned size={17} />
-                            <strong>Jardim da Moranguinho</strong>
-                            <span>MAPA DE EXPLORAÇÃO</span>
-                          </div>
-                          <button
-                            className="icon-button"
-                            onClick={() => setInfo(true)}
-                            aria-label="Instruções do mapa"
-                          >
-                            <HelpCircle size={17} />
-                          </button>
-                        </div>
-                        <div
-                          className="map-viewport"
-                          tabIndex={0}
-                          aria-label="Mapa navegável. Deslize ou use as setas para explorar todos os destinos."
-                        >
-                          <div className="map-canvas" style={{ width: `${zoom * 100}%` }}>
-                            <img
-                              src="/imagens/tutti-frutti-map.png"
-                              alt="Mapa do jardim da Moranguinho com a casa, a praça, o pomar e a casa da árvore"
-                              draggable="false"
-                            />
-                            <svg
-                              className="map-route"
-                              viewBox="0 0 100 100"
-                              preserveAspectRatio="none"
-                              aria-hidden="true"
-                            >
-                              <path d="M17 66 Q15 48 32 36 Q43 36 53 60 Q60 61 64 24 Q78 26 82 45 Q93 35 84 15" />
-                            </svg>
-                            {journey.activities.map((activity) => {
-                              const Icon = destinationIcons[activity.icon];
-                              return (
-                                <button
-                                  key={activity.id}
-                                  className={`map-pin pin--${activity.status} color-${activity.color}`}
-                                  style={{ left: `${activity.x}%`, top: `${activity.y}%` }}
-                                  onClick={() => open(activity)}
-                                  disabled={activity.status === "locked"}
-                                  aria-label={`${activity.place}: ${activity.status === "locked" ? "bloqueado" : activity.status === "completed" ? "concluído" : "explorar"}`}
-                                >
-                                  <span className="pin-halo" />
-                                  <span className="pin-head">
-                                    {activity.status === "completed" ? (
-                                      <Check size={17} />
-                                    ) : activity.status === "locked" ? (
-                                      <LockIcon />
-                                    ) : (
-                                      <Icon size={18} />
-                                    )}
-                                  </span>
-                                  <small>{activity.place}</small>
-                                  <b>{String(activity.id).padStart(2, "0")}</b>
-                                </button>
-                              );
-                            })}
-                            <div className="map-coordinates">
-                              CASO DO JARDIM
-                              <br />
-                              <span>CARTOGRAFIA DO EXTRAORDINÁRIO</span>
-                            </div>
-                            <div className="map-north">
-                              <span>N</span>
-                              <Compass size={26} />
-                            </div>
-                          </div>
-                        </div>
-                        <p className="map-scroll-tip">
-                          <MoveHorizontal size={12} /> Deslize para explorar todo o mapa
-                        </p>
-                        <div className="map-card-footer">
-                          <div className="map-legend">
-                            <span>
-                              <i /> Disponível
-                            </span>
-                            <span>
-                              <i /> Concluído
-                            </span>
-                            <span>
-                              <i /> Bloqueado
-                            </span>
-                          </div>
-                          <div className="zoom-controls">
-                            <button
-                              className="icon-button"
-                              aria-label="Diminuir zoom"
-                              disabled={zoom <= 1}
-                              onClick={() => setZoom((value) => Math.max(1, value - 0.25))}
-                            >
-                              <Minus size={15} />
-                            </button>
-                            <span>{Math.round(zoom * 100)}%</span>
-                            <button
-                              className="icon-button"
-                              aria-label="Aumentar zoom"
-                              disabled={zoom >= 1.75}
-                              onClick={() => setZoom((value) => Math.min(1.75, value + 0.25))}
-                            >
-                              <Plus size={15} />
-                            </button>
-                          </div>
-                        </div>
-                      </section>
-                      <aside className="quest-sidebar">
-                        <article className="next-quest paper-card">
-                          <span className="eyebrow">
-                            <span className="status-dot" />
-                            {complete ? "JORNADA CONCLUÍDA" : "PRÓXIMA DESCOBERTA"}
-                          </span>
-                          <span className="quest-large-icon">
-                            {complete ? <Trophy size={30} /> : <Compass size={30} />}
-                          </span>
-                          <h2>{next ? next.title : "O livro foi encontrado!"}</h2>
-                          <p>{next ? next.story : journey.activities[5].revelation}</p>
-                          {next ? (
-                            <>
-                              <div className="quest-meta">
-                                <span>0{next.id} / 06</span>
-                                <span>
-                                  {next.skill} · {next.minutes} min
-                                </span>
-                              </div>
-                              <button
-                                className="button button--primary button--full"
-                                onClick={() => open(next)}
-                              >
-                                Explorar destino <ArrowRight size={16} />
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              className="button button--dark button--full"
-                              onClick={() => setCertificate(true)}
-                            >
-                              Ver certificado <Trophy size={16} />
-                            </button>
-                          )}
-                        </article>
-                        <article className="journey-progress paper-card">
-                          <div>
-                            <strong>Seu caminho até aqui</strong>
-                            <span>{journey.percent}%</span>
-                          </div>
-                          <div
-                            className="progress-track"
-                            role="progressbar"
-                            aria-label="Progresso da jornada"
-                            aria-valuenow={journey.percent}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                          >
-                            <i style={{ width: `${journey.percent}%` }} />
-                          </div>
-                          <p>{journey.completed.length} de 6 mensagens encontradas</p>
-                          <div className="progress-stats">
-                            <span>
-                              <Sparkles size={15} />
-                              <strong>{journey.xp}</strong> pontos
-                            </span>
-                            <span>
-                              <Flag size={15} />
-                              <strong>{journey.completed.length}</strong> destinos
-                            </span>
-                          </div>
-                        </article>
-                      </aside>
-                    </div>
-                    <div className="destination-section-heading">
-                      <h2>Seis obstáculos. Um segredo.</h2>
-                      <span>ROTEIRO DE INVESTIGAÇÃO</span>
-                    </div>
-                    <div className="destination-grid">
-                      {journey.activities.map((activity) => {
-                        const Icon = destinationIcons[activity.icon];
-                        return (
-                          <button
-                            className={`destination-card color-${activity.color} destination--${activity.status}`}
-                            key={activity.id}
-                            disabled={activity.status === "locked"}
-                            onClick={() => open(activity)}
-                          >
-                            <span className="destination-card-top">
-                              <span className="destination-symbol">
-                                <Icon size={20} />
-                              </span>
-                              <small>0{activity.id}</small>
-                            </span>
-                            <strong>{activity.place}</strong>
-                            <span className="destination-skill">{activity.skill}</span>
-                            <span className="destination-state">
-                              {activity.status === "completed" ? (
-                                <>
-                                  <Check size={12} /> Explorado
-                                </>
-                              ) : activity.status === "locked" ? (
-                                <>
-                                  <LockIcon size={12} /> Complete o anterior
-                                </>
-                              ) : (
-                                <>
-                                  Explorar agora <ArrowRight size={13} />
-                                </>
-                              )}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-                {view === "journal" && (
-                  <>
-                    <div className="journal-banner">
-                      <BookOpen size={30} />
-                      <div>
-                        <span className="eyebrow">CADERNO DE EVIDÊNCIAS</span>
-                        <h2>
-                          {complete
-                            ? "A amizade faz o jardim florescer."
-                            : "Uma história que se revela aos poucos."}
-                        </h2>
-                        <div className="fragment-strip">
-                          {journey.activities.map((activity) => (
-                            <span
-                              key={activity.id}
-                              className={activity.fragment ? "" : "fragment-missing"}
-                            >
-                              {activity.fragment || "?"}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="journal-grid">
-                      {journey.activities.map((activity) => {
-                        const Icon = destinationIcons[activity.icon];
-                        return (
-                          <article
-                            key={activity.id}
-                            className={`journal-card paper-card color-${activity.color} ${activity.status === "completed" ? "" : "journal-empty"}`}
-                          >
-                            <span className="destination-symbol">
-                              <Icon size={23} />
-                            </span>
-                            <span className="eyebrow">PÁGINA 0{activity.id}</span>
-                            <h2>{activity.place}</h2>
-                            <p>
-                              {activity.status === "completed"
-                                ? activity.story
-                                : "Este capítulo ainda espera pela sua descoberta."}
-                            </p>
-                            {activity.fragment ? (
-                              <span className="collected-fragment">
-                                {activity.fragment}
-                                <Check size={14} />
-                              </span>
-                            ) : (
-                              <button
-                                className="text-action"
-                                disabled={activity.status === "locked"}
-                                onClick={() => open(activity)}
-                              >
-                                {activity.status === "locked"
-                                  ? "Ainda não revelado"
-                                  : "Descobrir esta página"}{" "}
-                                <ArrowRight size={14} />
-                              </button>
-                            )}
-                          </article>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-                {view === "achievements" && (
-                  <>
-                    <div className="achievement-summary paper-card">
-                      <span className="achievement-trophy">
-                        <Trophy size={32} />
-                      </span>
-                      <div>
-                        <span className="eyebrow">SUA COLEÇÃO DE DESCOBERTAS</span>
-                        <h2>{journey.xp} pontos de exploração.</h2>
-                        <p>
-                          {
-                            achievements.filter(
-                              (item) => journey.completed.length >= item.threshold,
-                            ).length
-                          }{" "}
-                          de 3 conquistas desbloqueadas · {journey.attempts} tentativas na jornada
-                        </p>
-                      </div>
-                      {complete && (
-                        <button
-                          className="button button--dark"
-                          onClick={() => setCertificate(true)}
-                        >
-                          Meu certificado <Download size={16} />
-                        </button>
-                      )}
-                    </div>
-                    <div className="achievement-grid">
-                      {achievements.map(({ id, title, text, threshold, icon: Icon }) => {
-                        const unlocked = journey.completed.length >= threshold;
-                        return (
-                          <article
-                            key={id}
-                            className={`achievement-card paper-card ${unlocked ? "is-unlocked" : ""}`}
-                          >
-                            <span className="achievement-emblem">
-                              <Icon size={35} strokeWidth={1.4} />
-                            </span>
-                            <span className="eyebrow">
-                              {unlocked ? "CONQUISTA DESBLOQUEADA" : "UM NOVO OBJETIVO"}
-                            </span>
-                            <h2>{title}</h2>
-                            <p>{text}</p>
-                            <span className="achievement-status">
-                              {unlocked ? (
-                                <>
-                                  <Check size={14} /> Conquistado
-                                </>
-                              ) : (
-                                <>
-                                  <LockIcon size={14} />
-                                  {Math.min(journey.completed.length, threshold)} / {threshold}{" "}
-                                  destinos
-                                </>
-                              )}
-                            </span>
-                          </article>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-                {view === "profile" && <Profile user={user} updateUser={updateUser} />}
-                <footer className="dashboard-footer">
-                  <span>
-                    <Leaf size={13} /> Observe tudo. Desconfie de qualquer detalhe.
-                  </span>
-                  <button onClick={() => setReset(true)}>
-                    <RotateCcw size={12} /> Reiniciar jornada
-                  </button>
-                </footer>
-              </>
-            )
-          )}
-        </main>
-      </div>
+        <span className="game-bottom-brand">
+          <Logo compact light />
+        </span>
+      </footer>
       {selected && (
         <Challenge
           key={selected.id}
@@ -678,54 +451,11 @@ export default function Adventure() {
           fragments={journey.fragments}
           onClose={closeActivity}
           onUpdate={setJourney}
+          onNext={next ? () => open(next) : undefined}
+          onFinale={complete ? openFinale : undefined}
         />
       )}
-      {info && (
-        <Modal title="Como explorar o jardim" onClose={() => setInfo(false)}>
-          <span className="eyebrow">SEU GUIA DE EXPLORAÇÃO</span>
-          <h2>
-            Deixe a curiosidade
-            <br />
-            guiar o caminho.
-          </h2>
-          <p className="modal-lead">
-            Comece na casa da Moranguinho e visite os seis cantinhos do mapa. Cada desafio revela
-            uma mensagem das amigas e libera o próximo lugar.
-          </p>
-          <ol className="guide-list">
-            <li>
-              <MapPinned size={20} />
-              <div>
-                <strong>Escolha um destino disponível</strong>
-                <p>Clique no ponto colorido do mapa ou no cartão abaixo dele.</p>
-              </div>
-            </li>
-            <li>
-              <Sparkles size={20} />
-              <div>
-                <strong>Resolva o desafio</strong>
-                <p>
-                  Leia a história, observe a pista e peça uma dica quando precisar. Você pode tentar
-                  novamente.
-                </p>
-              </div>
-            </li>
-            <li>
-              <BookOpen size={20} />
-              <div>
-                <strong>Guarde suas descobertas</strong>
-                <p>
-                  Seu progresso fica salvo neste dispositivo. Consulte o diário, reúna as mensagens
-                  e conquiste o certificado.
-                </p>
-              </div>
-            </li>
-          </ol>
-          <button className="button button--dark button--full" onClick={() => setInfo(false)}>
-            Entendi. Vamos explorar! <ArrowRight size={16} />
-          </button>
-        </Modal>
-      )}
+      {info && <GameGuide onClose={() => setInfo(false)} />}
       {reset && (
         <Modal title="Reiniciar jornada" onClose={() => setReset(false)}>
           <span className="eyebrow">COMEÇAR UMA NOVA HISTÓRIA</span>
@@ -748,40 +478,20 @@ export default function Adventure() {
           </div>
         </Modal>
       )}
-      {certificate && complete && (
-        <Modal title="Certificado de amizade" onClose={() => setCertificate(false)} wide>
-          <div className="certificate">
-            <Logo compact />
-            <span className="certificate-stars">✦ ✧ ✦</span>
-            <span className="eyebrow">CERTIFICADO DE CONCLUSÃO DA AVENTURA</span>
-            <h2>Amigo da Moranguinho.</h2>
-            <p>Concedido a</p>
-            <strong>{user.name}</strong>
-            <p>
-              por explorar os seis cantinhos do jardim,
-              <br />
-              resolver os desafios e celebrar a amizade.
-            </p>
-            <div className="certificate-seal">
-              <Trophy size={28} />
-              <span>6 DESTINOS · 600 PONTOS</span>
-            </div>
-            <small>
-              {new Date(journey.finished_at).toLocaleDateString("pt-BR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </small>
-            <span className="certificate-motto">A amizade faz tudo florescer.</span>
-          </div>
-          <button
-            className="button button--dark button--full certificate-print"
-            onClick={() => window.print()}
-          >
-            Imprimir ou salvar em PDF <Download size={16} />
-          </button>
-        </Modal>
+      {complete && ending === "party" && (
+        <Finale
+          journey={journey}
+          onClose={() => setEnding(null)}
+          onCertificate={() => setEnding("certificate")}
+        />
+      )}
+      {complete && ending === "certificate" && (
+        <Certificate
+          name={user.name}
+          journey={journey}
+          onClose={() => setEnding(null)}
+          onFinale={openFinale}
+        />
       )}
     </div>
   );

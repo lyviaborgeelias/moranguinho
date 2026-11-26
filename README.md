@@ -1,61 +1,57 @@
 # Segredos de Tutti-Frutti
 
-Aventura educativa full stack com React/Vite e Django REST. O mapa tem seis destinos com enigmas, sequência lógica, jogo da memória, quiz, ordenação e decifração. Cada descoberta desbloqueia o próximo destino, revela uma palavra e adiciona 100 pontos.
+O livro de receitas da Moranguinho desapareceu. Explore o jardim em 3D, converse com seis amigas e reúna as palavras que levam à surpresa da clareira. O jogo usa React, Vite, Three.js, Django REST e SQLite.
 
-## Rodar o projeto
+## Como rodar o projeto
 
-Requisitos: Node.js 22.12+ e Python 3.12+ (Django 6). Mantenha dois terminais abertos.
+Instale **Python 3.12 ou superior** e **Node.js 22.12 ou superior** (com npm). Abra dois terminais na pasta que contém este README e mantenha os dois abertos enquanto joga.
 
-### Terminal 1 — API
+### Terminal 1 — API Django
 
-No PowerShell, a partir da pasta do projeto:
+`env` é o ambiente virtual do backend. Os comandos abaixo usam o Python desse ambiente diretamente, sem precisar ativá-lo no PowerShell.
 
 ```powershell
 cd backend
 python -m venv env
-.\env\Scripts\Activate.ps1
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver 127.0.0.1:8000
+.\env\Scripts\python.exe -m pip install -r requirements.txt
+.\env\Scripts\python.exe -B manage.py migrate
+.\env\Scripts\python.exe -B manage.py runserver 127.0.0.1:8000
 ```
 
-Se já possui um ambiente virtual, apenas ative-o. Se o PowerShell bloquear a ativação, use diretamente `env\Scripts\python.exe` no lugar de `python`.
+Se o ambiente já existir e as dependências estiverem instaladas, execute `cd backend` e os dois comandos de `manage.py`. Para confirmar que a API iniciou, abra [a página de diagnóstico](http://127.0.0.1:8000/api/health/). Ela retorna `{"status":"ok"}`.
 
-### Terminal 2 — interface
+No Linux ou macOS, use `python3 -m venv env` para criar o ambiente e `./env/bin/python` nos comandos seguintes.
+
+### Terminal 2 — Jogo no navegador
+
+No segundo terminal, parta novamente da pasta que contém este README:
 
 ```powershell
 cd frontend
 npm ci
-npm run dev
+npm run dev -- --host 127.0.0.1
 ```
 
-Abra **http://localhost:5173**, clique em “Começar minha aventura” e crie uma conta. Cadastro e login abrem diretamente `/aventura`. O Vite encaminha `/api` ao Django; não é necessário alterar CORS ou usar outra porta. A porta 5173 é fixa: encerre a instância anterior se estiver ocupada.
+Abra [o jogo](http://127.0.0.1:5173/) e clique em **Começar investigação**. A partida começa como visitante. O Vite encaminha as chamadas de `/api` ao Django, e o progresso fica associado ao navegador em que você joga.
 
-## Funcionalidades para demonstrar
+Para encerrar, pressione **Ctrl+C** em cada terminal. Se a porta 8000 ou 5173 estiver ocupada, encerre a instância anterior do projeto antes de reiniciar.
 
-1. Crie uma conta e entre no mapa. E-mails duplicados e senhas fracas são rejeitados.
-2. Abra o pomar pelo ponto no mapa, use a dica e descubra o primeiro fragmento.
-3. Explore os seis desafios. Destinos futuros ficam bloqueados até concluir o anterior.
-4. Confira “Meu diário”, as palavras coletadas e as conquistas.
-5. Saia e entre novamente: o progresso fica salvo no SQLite **por usuário**, inclusive entre navegadores.
-6. Atualize seu nome ou sua senha em “Meu perfil”.
-7. Termine o sexto destino para obter o certificado e imprimir ou salvar em PDF.
-8. “Reiniciar jornada” pede confirmação e reinicia apenas o progresso da conta atual.
+## Como apresentar
 
-“Lembrar de mim” salva a sessão no navegador; desmarcado, ela dura a sessão da aba. Tokens de acesso são renovados automaticamente com o refresh token.
+1. Em **Meu perfil**, informe o nome que deve aparecer no certificado.
+2. No jardim, use **Seguir até Laranjinha**. Mostre a trilha luminosa, depois escolha **Sobre o bilhete** ou **Pedir uma dica** durante a conversa.
+3. Aceite a missão e responda às duas perguntas sobre *Moranguinho: Aventuras em Tutti-Frutti*. Caso uma resposta esteja incorreta, o jogo indica o que precisa ser revisto. Uma pista completa vale 100 XP e desbloqueia o próximo encontro.
+4. Use **Meu diário** para rever as descobertas e **Conquistas** para acompanhar as três medalhas.
+5. Depois da sexta pista, escolha **Participar da festa**, abra o livro e receba o certificado **Guardião do Jardim**. A opção de impressão também permite salvar em PDF.
 
-## Recuperação de senha
-
-A tela “Esqueci a senha” envia um link com token de uso único e validade de uma hora. Para desenvolvimento, o Django **imprime o e-mail no terminal**: copie o link mostrado e abra no navegador. Não há um serviço SMTP contratado no projeto.
-
-Para enviar e-mails reais, configure as variáveis `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` e `DEFAULT_FROM_EMAIL`. `FRONTEND_URL` define a origem dos links (padrão `http://localhost:5173`).
+Use WASD ou as setas para caminhar, Shift para correr, E para conversar e arraste o cenário para olhar ao redor. No celular, use o joystick e o botão de conversa. Se o navegador não iniciar o cenário 3D, **Jogar com a lista de encontros** permite continuar a mesma aventura.
 
 ## Validação
 
 ```powershell
-# Na pasta backend — testes com banco isolado em memória
-python -B manage.py check
-python -B manage.py test api
+# Na pasta backend
+.\env\Scripts\python.exe -B manage.py check
+.\env\Scripts\python.exe -B manage.py test api
 
 # Na pasta frontend
 npm run lint
@@ -64,21 +60,14 @@ npm exec playwright install chromium
 npm test
 ```
 
-Os testes de navegador iniciam a API na porta 8011 com um SQLite temporário e a interface na porta 5180. Não usam nem restauram `backend/db.sqlite3`.
+O Playwright inicia a API na porta 8011, usando um SQLite temporário, e a interface na porta 5180. Os testes não alteram o banco da partida local.
 
 ## Estrutura
 
-- `frontend/src/pages/`: apresentação e área autenticada.
-- `frontend/src/components/Challenge.jsx`: seis tipos de atividades.
-- `frontend/src/context/`: estado de autenticação.
-- `backend/api/catalog.py`: conteúdo e validação das respostas no servidor.
-- `backend/api/models.py`: jornada e tentativas por usuário.
-- `backend/api/tests.py` e `frontend/tests/`: testes funcionais.
+- `frontend/src/game/`: cenário, personagens, navegação e diálogos.
+- `frontend/src/components/`: encontros, perguntas e festa final.
+- `backend/api/catalog.py`: conteúdo das missões e correção das respostas.
+- `backend/api/models.py`: progresso e tentativas.
+- `docs/logo-art.md`: referência visual da marca.
 
-As respostas corretas e os fragmentos não conquistados não são enviados no catálogo da API. A conclusão é validada no Django. O painel `/admin/` permite consultar progresso e usuários com uma conta criada por `python manage.py createsuperuser`.
-
-## Configuração
-
-A API usa SQLite e configurações locais de desenvolvimento. `DJANGO_SECRET_KEY`, `DJANGO_DEBUG` e `DJANGO_DB_PATH` podem ser definidos no ambiente. `VITE_API_URL` é opcional para hospedar a interface com outra origem de API.
-
-A imagem original foi preservada. O novo mapa `frontend/public/imagens/tutti-frutti-map.png` foi criado com imagegen; o prompt está em `docs/map-art.md`.
+A API usa configurações locais de desenvolvimento. `DJANGO_DB_PATH`, `DJANGO_DEBUG` e `DJANGO_SECRET_KEY` podem ser definidos no ambiente. `VITE_API_URL` é opcional para hospedar a interface com outra origem de API.
