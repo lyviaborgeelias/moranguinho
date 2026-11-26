@@ -16,6 +16,7 @@ import {
 import Modal from "./Modal";
 import { destinationIcons } from "../data/activities";
 import api, { errorMessage } from "../services/api";
+import { readLocal, writeLocal } from "../services/progress";
 import { DialGame, LightsGame, MazeGame } from "./PuzzleGames";
 import { FriendPortrait } from "./Exploration";
 import { StrawberryMark } from "./Logo";
@@ -137,11 +138,26 @@ function MemoryBoard({ cards, maxTurns = 14, onAnswer }) {
   );
 }
 
-export default function Challenge({ activity, fragments, onClose, onUpdate, onNext, onFinale }) {
+export default function Challenge({
+  activity,
+  fragments,
+  onClose,
+  onUpdate,
+  onNext,
+  onFinale,
+  finalSolved,
+  online = true,
+}) {
   const Icon = destinationIcons[activity.icon];
   const friend = FRIENDS.find((item) => item.id === activity.id);
-  const [answer, setAnswer] = useState(
-    activity.kind === "quiz" ? [] : activity.kind === "order" ? [...activity.items] : "",
+  const [answer, setAnswer] = useState(() =>
+    activity.kind === "quiz"
+      ? activity.status === "completed"
+        ? []
+        : readLocal(`draft-${activity.id}`, activity.answers || [])
+      : activity.kind === "order"
+        ? [...activity.items]
+        : "",
   );
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -168,6 +184,7 @@ export default function Challenge({ activity, fragments, onClose, onUpdate, onNe
             (!activity.clues || inspectedClues.length === activity.clues.length);
   function choose(value) {
     setAnswer(value);
+    if (quiz) writeLocal(`draft-${activity.id}`, value);
     setFeedback("");
     setError("");
   }
@@ -187,7 +204,7 @@ export default function Challenge({ activity, fragments, onClose, onUpdate, onNe
   }
   async function submit(event) {
     event.preventDefault();
-    if (!valid || busy) return;
+    if (!valid || busy || !online) return;
     setBusy(true);
     setError("");
     setFeedback("");
@@ -196,6 +213,7 @@ export default function Challenge({ activity, fragments, onClose, onUpdate, onNe
       setEarned(data.correct && !data.already_completed);
       onUpdate(data.journey);
       if (data.correct) {
+        writeLocal(`draft-${activity.id}`, null);
         setReward(data.fragment);
         setFeedback("correct");
       } else {
@@ -228,6 +246,16 @@ export default function Challenge({ activity, fragments, onClose, onUpdate, onNe
           <h2>{activity.title}</h2>
         </div>
       </div>
+      {activity.treasure && feedback !== "correct" && (
+        <p className="treasure-reward">
+          Tesouro encontrado: <strong>{activity.treasure}</strong>
+        </p>
+      )}
+      {!online && (
+        <p role="status">
+          Offline: respostas ficam salvas neste dispositivo. Reconecte-se para confirmar a pista.
+        </p>
+      )}
       {feedback === "correct" ? (
         <div className="reward-view" role="status">
           <div className="reward-stars" aria-hidden="true">
@@ -241,6 +269,9 @@ export default function Challenge({ activity, fragments, onClose, onUpdate, onNe
           <span className="eyebrow">PISTA CONFIRMADA</span>
           <span className="reward-title">Você mandou bem!</span>
           <h3>{reward}</h3>
+          <p className="treasure-reward">
+            Tesouro encontrado: <strong>{activity.treasure}</strong>
+          </p>
           <p>
             {activity.revelation ||
               "Obstáculo vencido! Uma nova área do jardim está liberada para investigar."}
@@ -264,7 +295,11 @@ export default function Challenge({ activity, fragments, onClose, onUpdate, onNe
           <div className="reward-actions">
             {earned && (onNext || onFinale) && (
               <button className="button button--primary" onClick={onFinale || onNext}>
-                {onFinale ? "Participar da festa" : "Seguir para o próximo encontro"}{" "}
+                {onFinale
+                  ? finalSolved
+                    ? "Participar da festa"
+                    : "Resolver enigma final"
+                  : "Seguir para o próximo encontro"}{" "}
                 <ArrowRight size={17} />
               </button>
             )}
@@ -540,7 +575,7 @@ export default function Challenge({ activity, fragments, onClose, onUpdate, onNe
                   key="confirm-answers"
                   type="submit"
                   className="button button--primary"
-                  disabled={!valid || busy}
+                  disabled={!valid || busy || !online}
                 >
                   {busy ? (
                     <span className="spinner" />

@@ -8,7 +8,7 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .catalog import ACTIVITIES, correct_answer
+from .catalog import ACTIVITIES, FINAL_ORDER, correct_answer
 from .models import ActivityProgress
 
 
@@ -94,16 +94,60 @@ class JourneyTests(APITestCase):
         self.assertEqual(response.data["journey"]["xp"], 0)
         self.assertEqual(response.data["journey"]["attempts"], 1)
 
-    def test_all_six_challenges_unlock_and_award_certificate(self):
+    def test_all_six_challenges_unlock_final_riddle_only(self):
         for activity in ACTIVITIES:
             response = self.answer(activity["id"], activity["answer"])
             self.assertTrue(response.data["correct"])
         data = self.client.get("/api/journey/").data
         self.assertEqual(data["xp"], 600)
-        self.assertEqual(data["percent"], 100)
-        self.assertIsNotNone(data["finished_at"])
+        self.assertEqual(data["percent"], 86)
+        self.assertIsNone(data["finished_at"])
+        self.assertTrue(data["final_unlocked"])
         self.assertEqual(data["completed"], [1, 2, 3, 4, 5, 6])
         self.assertIn("revelation", data["activities"][-1])
+
+    def test_start_marks_in_progress_and_blocks_future(self):
+        self.assertEqual(self.client.post("/api/activities/2/start/").status_code, 403)
+        data = self.client.post("/api/activities/1/start/").data
+        self.assertEqual(data["activities"][0]["status"], "in_progress")
+        self.assertEqual(data["activities"][0]["clue_status"], "incomplete")
+        self.assertEqual(data["activities"][0]["quiz_status"], "unanswered")
+        self.assertEqual(data["attempts"], 0)
+
+    def test_final_cannot_be_accessed_early(self):
+        self.assertEqual(self.client.post("/api/journey/final/", {"order": FINAL_ORDER}, format="json").status_code, 403)
+
+    def test_treasure_and_answers_are_persisted(self):
+        first = ACTIVITIES[0]
+        self.answer(1, ["errado", first["answer"][1]])
+        data = self.client.get("/api/journey/").data["activities"][0]
+        self.assertEqual(data["quiz_status"], "incorrect")
+        self.assertEqual(data["treasure"], "Cesta de frutas")
+        self.assertNotIn("fragment", data)
+        self.answer(1, first["answer"])
+        data = self.client.get("/api/journey/").data["activities"][0]
+        self.assertEqual(data["quiz_status"], "correct")
+        self.assertEqual(data["answers"], first["answer"])
+        self.assertEqual(data["treasure"], "Cesta de frutas")
+        self.assertEqual(data["clue_status"], "complete")
+
+    def test_final_validates_order_and_restart_clears_completion(self):
+        for activity in ACTIVITIES:
+            self.answer(activity["id"], activity["answer"])
+        for malformed in (None, [1] * 6, [True, 2, 3, 4, 5, 6], [1, 2], [1, 2, 3, 4, 5, []]):
+            self.assertEqual(self.client.post("/api/journey/final/", {"order": malformed}, format="json").status_code, 400)
+        wrong = self.client.post("/api/journey/final/", {"order": [1, 2, 3, 4, 5, 6]}, format="json").data
+        self.assertFalse(wrong["correct"])
+        self.assertIsNone(wrong["journey"]["finished_at"])
+        correct = self.client.post("/api/journey/final/", {"order": FINAL_ORDER}, format="json").data
+        self.assertTrue(correct["correct"])
+        self.assertEqual(correct["journey"]["percent"], 100)
+        timestamp = correct["journey"]["finished_at"]
+        self.assertEqual(self.client.get("/api/journey/").data["finished_at"], timestamp)
+        self.assertEqual(self.client.post("/api/journey/final/", {"order": FINAL_ORDER}, format="json").data["journey"]["finished_at"], timestamp)
+        reset = self.client.delete("/api/journey/", {"confirm": True}, format="json").data
+        self.assertIsNone(reset["finished_at"])
+        self.assertFalse(reset["final_unlocked"])
 
     def test_replay_does_not_award_duplicate_points(self):
         self.answer(1, ACTIVITIES[0]["answer"])

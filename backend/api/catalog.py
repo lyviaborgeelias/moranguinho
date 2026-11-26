@@ -149,9 +149,23 @@ def correct_answer(activity, answer):
     return incorrect_questions(activity, answer) == []
 
 
-def public_activity(activity, completed):
+TREASURES = ["Cesta de frutas", "Flor encantada", "Lupa de investigação", "Pacote de sementes", "Nota musical", "Lanterna decorada"]
+# A mensagem final possui seis lacunas, cada uma com uma definição única.
+FINAL_ORDER = [5, 4, 1, 6, 2, 3]
+
+
+def public_activity(activity, completed, record=None):
     payload = {key: value for key, value in activity.items() if key not in ("answer", "fragment", "revelation")}
     payload["status"] = "completed" if activity["id"] in completed else "available" if activity["id"] == 1 or activity["id"] - 1 in completed else "locked"
+    if payload["status"] == "available" and record and (record.started_at or record.attempts):
+        payload["status"] = "in_progress"
+    payload["clue_status"] = {"locked": "locked", "available": "incomplete", "in_progress": "incomplete", "completed": "complete"}[payload["status"]]
+    payload["quiz_status"] = "correct" if payload["status"] == "completed" else "incorrect" if record and record.attempts else "unanswered"
+    payload["answers"] = record.answers if record else []
+    if payload["status"] == "in_progress" or activity["id"] in completed:
+        payload["treasure"] = TREASURES[activity["id"] - 1]
+    if payload["clue_status"] == "incomplete":
+        payload["clue_preview"] = f"Palavra secreta com {len(activity['fragment'])} letras."
     if activity["id"] in completed:
         payload["fragment"] = activity["fragment"]
         payload["revelation"] = activity["revelation"]

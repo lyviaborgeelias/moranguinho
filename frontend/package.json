@@ -11,7 +11,9 @@
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "format": "prettier --write src tests \"*.js\" \"*.json\" index.html",
-    "format:check": "prettier --check src tests \"*.js\" \"*.json\" index.html"
+    "format:check": "prettier --check src tests \"*.js\" \"*.json\" index.html",
+    "test:unit": "node --test unit/*.test.js",
+    "test:pwa": "npm run build && playwright test --config playwright.pwa.config.js"
   },
   "dependencies": {
     "axios": "^1.16.1",

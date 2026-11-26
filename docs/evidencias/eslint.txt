@@ -1,0 +1,1 @@
+ESLint aprovado (código 0, sem erros ou avisos).

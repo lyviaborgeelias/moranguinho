@@ -71,11 +71,32 @@ test("jornada em tela de celular, revisão, festa, certificado e progresso prese
     await expect(quiz.getByRole("status")).toContainText("+100 XP");
     await quiz
       .getByRole("button", {
-        name: index === 5 ? "Participar da festa" : "Seguir para o próximo encontro",
+        name: index === 5 ? "Resolver enigma final" : "Seguir para o próximo encontro",
       })
       .click();
   }
 
+  const riddle = page.getByRole("dialog", { name: "Enigma final" });
+  await expect(riddle).toBeVisible();
+  await expect(page.getByRole("button", { name: "Meu certificado" })).toHaveCount(0);
+  await riddle.getByRole("button", { name: "Validar solução" }).click();
+  await expect(riddle.getByRole("alert")).toContainText("Ainda não é a sequência");
+  // Drag CUIDADO to the first position, then use the keyboard-accessible controls.
+  await riddle.locator("li").filter({ hasText: "CUIDADO" }).dragTo(riddle.locator("li").first());
+  for (const word of ["CARINHO", "CARINHO", "CARINHO", "AMIGOS", "AMIGOS"]) {
+    const button = riddle.getByRole("button", { name: `Subir ${word}` });
+    await button.focus();
+    await page.keyboard.press("Enter");
+  }
+  await expect(riddle.locator("li strong")).toHaveText([
+    "CUIDADO",
+    "CARINHO",
+    "AMIZADE",
+    "AMIGOS",
+    "MORANGO",
+    "ALEGRIA",
+  ]);
+  await riddle.getByRole("button", { name: "Validar solução" }).click();
   const party = page.getByRole("dialog", { name: "Festa das amigas" });
   await expect(party.locator(".festival-friends li")).toHaveCount(6);
   await expect(party.locator(".festival-stamps span")).toHaveCount(6);

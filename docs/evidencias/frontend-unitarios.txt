@@ -1,0 +1,86 @@
+
+> moranguinho-frontend@0.0.0 test:unit
+> node --test unit/*.test.js
+
+TAP version 13
+# Subtest: uma trilha visual existente não movimenta a personagem sem comando
+ok 1 - uma trilha visual existente não movimenta a personagem sem comando
+  ---
+  duration_ms: 5.568797
+  type: 'test'
+  ...
+# Subtest: WASD e setas comandam o deslocamento e soltar a tecla para imediatamente
+ok 2 - WASD e setas comandam o deslocamento e soltar a tecla para imediatamente
+  ---
+  duration_ms: 0.643188
+  type: 'test'
+  ...
+# Subtest: Shift aumenta a velocidade somente quando existe comando de movimento
+ok 3 - Shift aumenta a velocidade somente quando existe comando de movimento
+  ---
+  duration_ms: 0.334372
+  type: 'test'
+  ...
+# Subtest: joystick move, soltá-lo interrompe e arrastar câmera não desloca
+ok 4 - joystick move, soltá-lo interrompe e arrastar câmera não desloca
+  ---
+  duration_ms: 0.207041
+  type: 'test'
+  ...
+# Subtest: movimento diagonal é normalizado e obstáculos continuam bloqueando passagem
+ok 5 - movimento diagonal é normalizado e obstáculos continuam bloqueando passagem
+  ---
+  duration_ms: 0.264307
+  type: 'test'
+  ...
+# Subtest: persistência de progresso, rascunho e ordem isolada por visitante
+ok 6 - persistência de progresso, rascunho e ordem isolada por visitante
+  ---
+  duration_ms: 1.768059
+  type: 'test'
+  ...
+# Subtest: ordem guarda apenas pistas concluídas, remove duplicatas e inclui novas
+ok 7 - ordem guarda apenas pistas concluídas, remove duplicatas e inclui novas
+  ---
+  duration_ms: 0.353822
+  type: 'test'
+  ...
+# Subtest: movimentos de arraste e teclado preservam todas as pistas
+ok 8 - movimentos de arraste e teclado preservam todas as pistas
+  ---
+  duration_ms: 0.327823
+  type: 'test'
+  ...
+# Subtest: instala e atualiza cache versionado sem apagar cache de outros apps
+ok 9 - instala e atualiza cache versionado sem apagar cache de outros apps
+  ---
+  duration_ms: 2.25386
+  type: 'test'
+  ...
+# Subtest: PWA abre tela e assets offline; não intercepta API, POST ou dados externos
+ok 10 - PWA abre tela e assets offline; não intercepta API, POST ou dados externos
+  ---
+  duration_ms: 0.886193
+  type: 'test'
+  ...
+# Subtest: manifest tem ícones instaláveis e escopo da aventura
+ok 11 - manifest tem ícones instaláveis e escopo da aventura
+  ---
+  duration_ms: 0.440362
+  type: 'test'
+  ...
+# Subtest: plugin gera SW incluindo chunks, imagens e manifest, com versão por conteúdo
+ok 12 - plugin gera SW incluindo chunks, imagens e manifest, com versão por conteúdo
+  ---
+  duration_ms: 42.04498
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 114.675776

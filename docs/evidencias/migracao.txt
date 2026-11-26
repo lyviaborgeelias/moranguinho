@@ -1,0 +1,5 @@
+Operations to perform:
+  Apply all migrations: admin, api, auth, contenttypes, sessions
+Running migrations:
+  Applying api.0002_activityprogress_answers_activityprogress_started_at_and_more... OK
+System check identified no issues (0 silenced).

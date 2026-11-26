@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { manualMovement } from "./movement";
 import { createCharacter } from "./characters";
 import { buildScenery } from "./scenery";
 import { bridgeHeight, canWalk, findPath, FRIENDS, HOUSES, SPAWN } from "./world";
@@ -102,7 +103,8 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
     paused = false,
     destroyed = false,
     path = [],
-    following = null,
+    guideId = null,
+    lastGuide = -1,
     targetId = 1,
     lastState = -1,
     lastSaved = -1,
@@ -123,7 +125,7 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
     yaw = mobile ? 0.19 : 0.44;
     pitch = defaultPitch;
     path = [];
-    following = null;
+    guideId = null;
   }
   resetPosition();
   try {
@@ -172,43 +174,46 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
       nearId,
       distance: Math.round(distance),
       angle,
-      following: Boolean(following),
+      guiding: guideId,
       region,
       moving: movingSpeed > 0.1,
       x: player.position.x,
       z: player.position.z,
     });
   }
-  function interact() {
+  function interact(id = null) {
     status(true);
-    if (paused || !nearId) return;
+    if (paused || !nearId || (id !== null && id !== nearId)) return;
     path = [];
-    following = null;
+    guideId = null;
     keys.clear();
     joystick.x = joystick.y = 0;
     const friend = friends.find((item) => item.id === nearId);
     player.rotation.y = Math.atan2(friend.x - player.position.x, friend.z - player.position.z);
     onTalk(nearId);
   }
-  function follow(id) {
-    if (paused) return;
-    const friend = friends.find((item) => item.id === id);
+  function updateGuide() {
+    const friend = friends.find((item) => item.id === guideId);
     if (!friend) return;
-    if (Math.hypot(friend.x - player.position.x, friend.z - player.position.z) < 2.6) {
-      status(true);
-      interact();
+    if (Math.hypot(friend.x - player.position.x, friend.z - player.position.z) < 2.7) {
+      path = [];
+      guideId = null;
       return;
     }
-    const route = findPath(player.position, friend, scenery.obstacles);
-    if (!route.length) {
-      onError(
-        "Esse caminho está bloqueado. Caminhe um pouco para o lado e tente seguir a amiga novamente.",
-      );
-      return;
-    }
-    path = route;
-    following = id;
+    // The route is exclusively a visual hint, never a movement command.
+    path = findPath(player.position, friend, scenery.obstacles);
+    lastGuide = elapsed;
+  }
+  function guide(id) {
+    if (paused || !friends.some((item) => item.id === id)) return;
+    guideId = id;
+    updateGuide();
     status(true);
+  }
+  function selectFriend(id) {
+    status(true);
+    if (nearId === id) interact(id);
+    else guide(id);
   }
   const keydown = (event) => {
     if (
@@ -235,24 +240,15 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
         "e",
       ].includes(key)
     ) {
-      if (event.target.closest("button") && !["w", "a", "s", "d", "e"].includes(key)) return;
       event.preventDefault();
       if (key === "e" && !event.repeat) interact();
-      else {
-        keys.add(key);
-        if (key !== "shift") {
-          path = [];
-          following = null;
-        }
-      }
+      else if (key !== "e") keys.add(key);
     }
   };
   const keyup = (event) => keys.delete(event.key.toLowerCase());
   const blur = () => {
     keys.clear();
     joystick.x = joystick.y = 0;
-    path = [];
-    following = null;
   };
   window.addEventListener("keydown", keydown);
   window.addEventListener("keyup", keyup);
@@ -338,54 +334,21 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
     lastTime = now;
     if (document.hidden) return;
     elapsed += dt;
-    let dx = 0,
-      dz = 0;
     if (!paused) {
-      const forward =
-        Number(keys.has("w") || keys.has("arrowup")) -
-        Number(keys.has("s") || keys.has("arrowdown")) -
-        joystick.y;
-      const side =
-        Number(keys.has("d") || keys.has("arrowright")) -
-        Number(keys.has("a") || keys.has("arrowleft")) +
-        joystick.x;
-      if (Math.abs(forward) + Math.abs(side) > 0.01) {
-        dx = Math.cos(yaw) * side - Math.sin(yaw) * forward;
-        dz = -Math.sin(yaw) * side - Math.cos(yaw) * forward;
-      } else if (path.length) {
-        const target = path[0],
-          distance = Math.hypot(target.x - player.position.x, target.z - player.position.z);
-        if (distance < 0.2) path.shift();
-        else {
-          dx = (target.x - player.position.x) / distance;
-          dz = (target.z - player.position.z) / distance;
-        }
-        if (following) {
-          const friend = friends.find((f) => f.id === following);
-          if (Math.hypot(friend.x - player.position.x, friend.z - player.position.z) < 2.35) {
-            path = [];
-            following = null;
-            status(true);
-            interact();
-            dx = dz = 0;
-          }
-        }
-      }
-      const length = Math.hypot(dx, dz),
-        speed = keys.has("shift") || following ? 5 : 3.2;
-      if (length > 0) {
-        dx /= Math.max(1, length);
-        dz /= Math.max(1, length);
-      }
-      const x = player.position.x + dx * speed * dt,
-        z = player.position.z + dz * speed * dt;
       const oldX = player.position.x,
         oldZ = player.position.z;
-      if (canWalk(x, player.position.z, scenery.obstacles)) player.position.x = x;
-      if (canWalk(player.position.x, z, scenery.obstacles)) player.position.z = z;
-      movingSpeed =
-        Math.hypot(player.position.x - oldX, player.position.z - oldZ) / Math.max(dt, 0.001);
-      if (length > 0.01) {
+      const { x, z, dx, dz } = manualMovement({
+        position: player.position,
+        keys,
+        joystick,
+        yaw,
+        dt,
+        obstacles: scenery.obstacles,
+      });
+      player.position.x = x;
+      player.position.z = z;
+      movingSpeed = Math.hypot(x - oldX, z - oldZ) / Math.max(dt, 0.001);
+      if (Math.hypot(dx, dz) > 0.01) {
         const angle = Math.atan2(dx, dz),
           delta = Math.atan2(
             Math.sin(angle - player.rotation.y),
@@ -393,6 +356,7 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
           );
         player.rotation.y += delta * (1 - Math.exp(-14 * dt));
       }
+      if (guideId && elapsed - lastGuide > 0.35) updateGuide();
       player.position.y = THREE.MathUtils.lerp(
         player.position.y,
         bridgeHeight(player.position.x, player.position.z),
@@ -414,7 +378,7 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
         );
     });
     scenery.animate(elapsed);
-    trail.count = !paused && following ? Math.min(14, path.length) : 0;
+    trail.count = !paused && guideId ? Math.min(14, path.length) : 0;
     for (let i = 0; i < trail.count; i++) {
       const { x, z } = path[i];
       stepMark.position.set(x, bridgeHeight(x, z) + 0.025, z);
@@ -446,19 +410,18 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
   }
   frame = requestAnimationFrame(loop);
   return {
-    follow,
+    guide,
+    selectFriend,
     interact,
-    stop() {
+    hideGuide() {
       path = [];
-      following = null;
+      guideId = null;
       status(true);
     },
-    setActivities(next) {
+    setActivities(next, finalSolved = false) {
       activities = next;
-      targetId = next.find((a) => a.status === "available")?.id || 6;
-      scenery.setFestival(
-        next.length > 0 && next.every((activity) => activity.status === "completed"),
-      );
+      targetId = next.find((a) => ["available", "in_progress"].includes(a.status))?.id || 6;
+      scenery.setFestival(Boolean(finalSolved));
       status(true);
     },
     setPaused(value) {
@@ -472,12 +435,9 @@ export function createGarden(host, { labels, onState, onTalk, onError }) {
       if (paused) return;
       joystick.x = x;
       joystick.y = y;
-      if (Math.abs(x) + Math.abs(y) > 0.01) {
-        path = [];
-        following = null;
-      }
     },
     reset() {
+      blur();
       resetPosition();
       savePosition();
       positionCamera(1, true);

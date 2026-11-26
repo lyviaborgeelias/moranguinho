@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("interface 3D mantém o objetivo, a identidade e o menu acessíveis", async ({ page }) => {
   await page.goto("/aventura");
-  await expect(page.getByRole("button", { name: "Seguir até Laranjinha" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mostrar caminho até Laranjinha" })).toBeVisible();
   for (const [width, height] of [
     [1280, 720],
     [390, 844],
@@ -10,7 +10,7 @@ test("interface 3D mantém o objetivo, a identidade e o menu acessíveis", async
     [844, 390],
   ]) {
     await page.setViewportSize({ width, height });
-    await expect(page.getByRole("button", { name: "Seguir até Laranjinha" })).toBeInViewport({
+    await expect(page.getByRole("button", { name: "Mostrar caminho até Laranjinha" })).toBeInViewport({
       ratio: 1,
     });
     await expect(page.getByRole("navigation", { name: "Navegação da aventura" })).toBeInViewport({

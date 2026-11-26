@@ -1,0 +1,164 @@
+/* New features use the existing garden palette and paper-card treatment. */
+.clue-order {
+  padding: 1rem;
+  border: 1px solid #d5b8be;
+  border-radius: 16px;
+  background: #fff9f4;
+  color: #422e33;
+}
+.clue-order > p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin: 0 0 0.65rem;
+}
+.clue-order ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.clue-sort-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.6rem 0.7rem;
+  background: #fff;
+  border: 1px solid #d2aeb9;
+  border-radius: 10px;
+  cursor: grab;
+  min-width: 0;
+}
+.clue-sort-card.is-grabbed {
+  opacity: 0.65;
+  border: 2px dashed #87334f;
+}
+.clue-sort-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.clue-sort-label strong,
+.clue-sort-label small {
+  display: block;
+}
+.clue-sort-label strong {
+  color: #852f50;
+  letter-spacing: 0.04em;
+}
+.clue-sort-label small {
+  color: #5e4850;
+  line-height: 1.4;
+}
+.clue-sort-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+.clue-sort-actions button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.35rem;
+  justify-content: center;
+}
+.clue-sort-actions button[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.clue-order .clue-announcement {
+  margin: 0.6rem 0 0;
+  min-height: 1em;
+}
+.final-riddle-form {
+  padding: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+.final-riddle-form > button {
+  justify-self: end;
+}
+.clue-state {
+  font-weight: 700;
+}
+.treasure-reward {
+  color: #70354b;
+}
+.geo-card {
+  margin-top: 1rem;
+  padding: 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.geo-card button {
+  justify-self: start;
+}
+.accessible-list-toggle {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0 0;
+  margin-top: 0.3rem;
+  background: transparent;
+  border: 0;
+  color: #722e48;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-align: left;
+  text-decoration: underline;
+}
+.save-indicator .status-dot--offline {
+  background: #f3aa67;
+}
+.npc-tag[data-status="in_progress"] .npc-quest-marker {
+  background: #b7762e;
+  color: #fff;
+}
+.npc-labels[hidden] {
+  display: none;
+}
+.quiz-state {
+  color: #6f4551;
+  font-size: 0.8rem;
+}
+.clue-order button:focus-visible,
+.final-riddle-form button:focus-visible,
+.geo-card button:focus-visible,
+.accessible-list-toggle:focus-visible {
+  outline: 3px solid #633349;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .clue-order {
+    padding: 0.6rem;
+  }
+  .clue-sort-card {
+    padding: 0.5rem;
+  }
+  .clue-grip {
+    display: none;
+  }
+}
+
+.hud-progress .save-indicator {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  justify-self: center;
+  margin: 0;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #f3efcf;
+  white-space: nowrap;
+}
+.hud-progress .save-indicator .status-dot {
+  width: 7px;
+  height: 7px;
+}
+@media (max-width: 600px) {
+  .hud-progress .save-indicator {
+    font-size: 8px;
+  }
+}

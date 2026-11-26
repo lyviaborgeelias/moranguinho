@@ -44,12 +44,17 @@ export default function Home() {
           Uma trilha de pistas espera por você.
         </p>
         <div className="landing-actions">
-          <Link className="button button--primary title-play" to="/aventura">
+          <Link className="button button--primary title-play" to="/aventura?novo=1">
             <Play size={21} fill="currentColor" /> Começar investigação <ArrowRight size={20} />
           </Link>
-          <button className="title-help" onClick={() => setGuide(true)}>
-            <BookOpen size={17} /> Como jogar
-          </button>
+          <div className="title-secondary-actions">
+            <Link className="title-help" to="/aventura">
+              Continuar aventura <ArrowRight size={15} />
+            </Link>
+            <button className="title-help" onClick={() => setGuide(true)}>
+              <BookOpen size={17} /> Como jogar
+            </button>
+          </div>
         </div>
         <span className="title-save">
           <span className="status-dot" /> Seu progresso é salvo automaticamente

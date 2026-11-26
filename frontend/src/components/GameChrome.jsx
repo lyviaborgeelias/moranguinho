@@ -74,7 +74,8 @@ export function GameGuide({ onClose }) {
             <strong>Encontre suas amigas</strong>
             <p>
               Pressione E ou toque em “Conversar” perto de uma amiga. Pergunte sobre o bilhete, peça
-              uma dica ou aceite a missão. “Seguir até” mostra a trilha no chão.
+              uma dica ou aceite a missão. “Mostrar caminho” apenas indica a trilha no chão. Você
+              controla todos os movimentos.
             </p>
           </div>
         </li>
@@ -83,8 +84,8 @@ export function GameGuide({ onClose }) {
           <div>
             <strong>Complete sua coleção</strong>
             <p>
-              Cada missão rende uma palavra e 100 XP. Reúna as seis pistas para abrir o livro na
-              Festa das Amigas e receber o certificado.
+              Cada missão rende um tesouro, uma palavra e 100 XP. Reorganize as pistas no diário com
+              arraste ou teclado. Resolva o enigma final para liberar a festa e o certificado.
             </p>
           </div>
         </li>

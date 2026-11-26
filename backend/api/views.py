@@ -17,7 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .catalog import ACTIVITIES, incorrect_questions, public_activity
+from .catalog import ACTIVITIES, FINAL_ORDER, incorrect_questions, public_activity
 from .models import ActivityProgress, Journey
 
 
@@ -46,11 +46,13 @@ def journey_payload(user):
     journey, _ = Journey.objects.get_or_create(user=user)
     records = list(ActivityProgress.objects.filter(user=user))
     completed = [record.activity_id for record in records if record.completed_at]
-    finished = next((record.completed_at for record in records if record.activity_id == 6), None)
+    by_id = {record.activity_id: record for record in records}
+    finished = journey.finished_at
     return {
-        "activities": [public_activity(activity, completed) for activity in ACTIVITIES],
+        "activities": [public_activity(activity, completed, by_id.get(activity["id"])) for activity in ACTIVITIES],
         "completed": completed, "xp": len(completed) * 100,
-        "percent": round(len(completed) / len(ACTIVITIES) * 100),
+        "percent": round((len(completed) + int(bool(finished))) / (len(ACTIVITIES) + 1) * 100),
+        "final_unlocked": len(completed) == len(ACTIVITIES),
         "attempts": sum(record.attempts for record in records),
         "started_at": journey.started_at, "finished_at": finished,
         "fragments": [activity["fragment"] for activity in ACTIVITIES if activity["id"] in completed],
@@ -196,7 +198,7 @@ class JourneyView(APIView):
         with transaction.atomic():
             user = guest_user(request)
             ActivityProgress.objects.filter(user=user).delete()
-            Journey.objects.update_or_create(user=user, defaults={"started_at": timezone.now()})
+            Journey.objects.update_or_create(user=user, defaults={"started_at": timezone.now(), "finished_at": None})
         return Response(journey_payload(user))
 
 
@@ -222,6 +224,9 @@ class ActivityAnswerView(APIView):
             correct = review == []
             if not already_completed:
                 record.attempts = F("attempts") + 1
+                record.started_at = record.started_at or timezone.now()
+                if review is not None:
+                    record.answers = request.data["answer"]
                 if correct:
                     record.completed_at = timezone.now()
                 record.save()
@@ -232,6 +237,42 @@ class ActivityAnswerView(APIView):
             "fragment": activity["fragment"] if correct else None,
             "journey": journey_payload(user),
         })
+
+
+class ActivityStartView(PublicView):
+    def post(self, request, activity_id):
+        if activity_id not in {activity["id"] for activity in ACTIVITIES}:
+            return Response({"erro": "Destino não encontrado."}, status=404)
+        user = guest_user(request)
+        with transaction.atomic():
+            Journey.objects.get_or_create(user=user)
+            Journey.objects.select_for_update().get(user=user)
+            if activity_id > 1 and not ActivityProgress.objects.filter(user=user, activity_id=activity_id - 1, completed_at__isnull=False).exists():
+                return Response({"erro": "Conclua o destino anterior."}, status=403)
+            record, _ = ActivityProgress.objects.get_or_create(user=user, activity_id=activity_id)
+            if not record.started_at:
+                record.started_at = timezone.now()
+                record.save(update_fields=["started_at"])
+        return Response(journey_payload(user))
+
+
+class FinalAnswerView(PublicView):
+    def post(self, request):
+        user = guest_user(request)
+        order = request.data.get("order")
+        with transaction.atomic():
+            Journey.objects.get_or_create(user=user)
+            journey = Journey.objects.select_for_update().get(user=user)
+            completed = set(ActivityProgress.objects.filter(user=user, completed_at__isnull=False).values_list("activity_id", flat=True))
+            if completed != {activity["id"] for activity in ACTIVITIES}:
+                return Response({"erro": "Colete todas as pistas antes de resolver o enigma."}, status=403)
+            if not isinstance(order, list) or len(order) != len(FINAL_ORDER) or any(type(item) is not int for item in order) or set(order) != set(FINAL_ORDER):
+                return Response({"erro": "Organize as seis pistas, sem repetir nenhuma."}, status=400)
+            correct = order == FINAL_ORDER
+            if correct and not journey.finished_at:
+                journey.finished_at = timezone.now()
+                journey.save(update_fields=["finished_at"])
+        return Response({"correct": correct, "journey": journey_payload(user)})
 
 
 class HealthView(PublicView):

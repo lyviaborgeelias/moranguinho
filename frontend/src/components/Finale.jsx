@@ -12,7 +12,7 @@ const confetti = Array.from({ length: 24 }, (_, index) => ({
   color: ["#e5789e", "#f4c46c", "#aebd7d", "#c39bcd"][index % 4],
 }));
 
-export function Finale({ journey, onCertificate, onClose }) {
+export function Finale({ journey, onCertificate, onClose, onRestart }) {
   const [bookOpen, setBookOpen] = useState(false);
   return (
     <Modal title="Festa das amigas" className="modal--finale" wide onClose={onClose}>
@@ -76,6 +76,9 @@ export function Finale({ journey, onCertificate, onClose }) {
           </span>
           <button className="button button--dark" onClick={onCertificate}>
             Ver certificado <Download size={17} />
+          </button>
+          <button className="button button--outline" onClick={onRestart}>
+            Reiniciar aventura
           </button>
         </footer>
       </div>

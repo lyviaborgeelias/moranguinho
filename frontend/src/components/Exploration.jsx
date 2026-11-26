@@ -30,7 +30,17 @@ export function FriendPortrait({ friend }) {
   );
 }
 
-function Encounter({ friend, activity, target, onClose, onMission, onGuide, onFinale }) {
+function Encounter({
+  friend,
+  activity,
+  target,
+  onClose,
+  onMission,
+  onGuide,
+  listMode,
+  onFinale,
+  finalSolved,
+}) {
   const [topic, setTopic] = useState("greeting");
   const { clue, thanks } = conversations[friend.id];
   const locked = activity.status === "locked";
@@ -90,7 +100,7 @@ function Encounter({ friend, activity, target, onClose, onMission, onGuide, onFi
           </button>
           {locked ? (
             <button type="button" className="button button--primary" onClick={onGuide}>
-              Ir até {target.name} <ArrowRight size={17} />
+              {listMode ? "Ir até" : "Mostrar caminho até"} {target.name} <ArrowRight size={17} />
             </button>
           ) : (
             <button type="button" className="button button--primary" onClick={onMission}>
@@ -100,7 +110,7 @@ function Encounter({ friend, activity, target, onClose, onMission, onGuide, onFi
         </div>
         {onFinale && (
           <button type="button" className="text-action" onClick={onFinale}>
-            Visitar a festa <Trophy size={15} />
+            {finalSolved ? "Visitar a festa" : "Resolver enigma final"} <Trophy size={15} />
           </button>
         )}
       </footer>
@@ -115,6 +125,7 @@ export default function Exploration({
   resetKey,
   onMission,
   onFinale,
+  finalSolved,
 }) {
   const host = useRef(null),
     engine = useRef(null),
@@ -123,7 +134,7 @@ export default function Exploration({
     nearId: null,
     distance: 0,
     region: "Jardim da casa",
-    following: false,
+    guiding: null,
     angle: 0,
   });
   const [dialogue, setDialogue] = useState(null),
@@ -131,7 +142,9 @@ export default function Exploration({
     [ready, setReady] = useState(false),
     [boot, setBoot] = useState(0),
     [listMode, setListMode] = useState(false);
-  const next = activities.find((activity) => activity.status === "available");
+  const next = activities.find((activity) =>
+    ["available", "in_progress"].includes(activity.status),
+  );
   const target = FRIENDS.find((friend) => friend.id === next?.id) || FRIENDS[5];
   const near = FRIENDS.find((friend) => friend.id === state.nearId);
   const friend = FRIENDS.find((item) => item.id === dialogue);
@@ -166,26 +179,26 @@ export default function Exploration({
     };
   }, [boot, listMode]);
   useEffect(() => {
-    engine.current?.setActivities(activities);
-  }, [activities, ready, boot]);
+    engine.current?.setActivities(activities, finalSolved);
+  }, [activities, finalSolved, ready, boot]);
   useEffect(() => {
     engine.current?.setPaused(Boolean(paused || dialogue));
     if (!paused && !dialogue && guideRequest.current) {
-      engine.current?.follow(guideRequest.current);
+      engine.current?.guide(guideRequest.current);
       guideRequest.current = null;
     }
   }, [paused, dialogue, ready, boot]);
   useEffect(() => {
     if (!followRequest?.id) return;
     if (listMode) setDialogue(followRequest.id);
-    else if (ready) engine.current?.follow(followRequest.id);
+    else if (ready) engine.current?.guide(followRequest.id);
   }, [followRequest, ready, listMode]);
   useEffect(() => {
     if (resetKey) engine.current?.reset();
   }, [resetKey]);
-  function follow(id) {
+  function guide(id) {
     setError("");
-    engine.current?.follow(id);
+    engine.current?.guide(id);
   }
   function move(event, x, y) {
     event.preventDefault();
@@ -215,7 +228,7 @@ export default function Exploration({
       aria-label="Mundo explorável da Moranguinho"
     >
       <div ref={host} className="garden-renderer" data-testid="garden-world" />
-      <div className="npc-labels">
+      <div className="npc-labels" hidden={listMode} aria-hidden={listMode}>
         {FRIENDS.map((item) => (
           <button
             key={item.id}
@@ -224,9 +237,9 @@ export default function Exploration({
               else labels.current.delete(item.id);
             }}
             className="npc-tag"
-            onClick={() => follow(item.id)}
-            disabled={paused || Boolean(dialogue)}
-            aria-label={`Caminhar até ${item.name}`}
+            onClick={() => engine.current?.selectFriend(item.id)}
+            disabled={paused || listMode || Boolean(dialogue)}
+            aria-label={`Localizar ou conversar com ${item.name}: ${{ locked: "bloqueado", available: "disponível", in_progress: "em andamento", completed: "concluído" }[activities.find((a) => a.id === item.id)?.status] || "bloqueado"}`}
           >
             <span className="npc-quest-marker">!</span>
             <strong>{item.name}</strong>
@@ -295,6 +308,7 @@ export default function Exploration({
                         {
                           locked: "Encontro futuro",
                           available: "Próxima pista",
+                          in_progress: "Em andamento",
                           completed: "Pista encontrada",
                         }[item.status]
                       }
@@ -307,12 +321,12 @@ export default function Exploration({
           </div>
           {complete && (
             <button className="button button--primary" onClick={onFinale}>
-              Abrir a festa <Trophy size={16} />
+              {finalSolved ? "Abrir a festa" : "Resolver enigma final"} <Trophy size={16} />
             </button>
           )}
         </section>
       )}
-      {!paused && ready && (
+      {!paused && ready && !listMode && (
         <>
           <section className="field-mission" aria-label="Missão atual">
             <div className="field-mission-heading">
@@ -321,7 +335,11 @@ export default function Exploration({
               </span>
               <div>
                 <span className="eyebrow">
-                  {next ? `ENCONTRO ${next.id} DE 6` : "JORNADA CONCLUÍDA"}
+                  {next
+                    ? `ENCONTRO ${next.id} DE 6`
+                    : finalSolved
+                      ? "JORNADA CONCLUÍDA"
+                      : "ENIGMA FINAL"}
                 </span>
                 <h1>{next ? `Encontre ${target.name}` : "O segredo da amizade"}</h1>
               </div>
@@ -329,7 +347,9 @@ export default function Exploration({
             <p>
               {next
                 ? "Caminhe até sua amiga e descubra a próxima pista."
-                : "A festa das amigas está pronta na clareira."}
+                : finalSolved
+                  ? "A festa das amigas está pronta na clareira."
+                  : "Organize as seis pistas e resolva o segredo do livro."}
             </p>
             <div className="field-mission-bottom">
               {next ? (
@@ -343,24 +363,35 @@ export default function Exploration({
               )}
               {next ? (
                 <button
-                  onClick={() => (state.following ? engine.current?.stop() : follow(target.id))}
+                  onClick={() =>
+                    state.guiding === target.id ? engine.current?.hideGuide() : guide(target.id)
+                  }
                 >
-                  {state.following ? (
+                  {state.guiding === target.id ? (
                     <>
-                      <Square size={11} /> Parar caminhada
+                      <Square size={11} /> Ocultar trilha
                     </>
                   ) : (
                     <>
-                      Seguir até {target.name} <ArrowRight size={13} />
+                      Mostrar caminho até {target.name} <ArrowRight size={13} />
                     </>
                   )}
                 </button>
               ) : (
                 <button onClick={onFinale}>
-                  Abrir a festa <Trophy size={13} />
+                  {finalSolved ? "Abrir a festa" : "Resolver enigma final"} <Trophy size={13} />
                 </button>
               )}
             </div>
+            <button
+              className="accessible-list-toggle"
+              onClick={() => {
+                setReady(false);
+                setListMode(true);
+              }}
+            >
+              Jogar com a lista de encontros
+            </button>
           </section>
           <div className="field-location">
             <span className="location-line" />
@@ -412,6 +443,12 @@ export default function Exploration({
                 event.currentTarget.style.setProperty("--stick-x", "0px");
                 event.currentTarget.style.setProperty("--stick-y", "0px");
               }}
+              onLostPointerCapture={(event) => {
+                joystick.current = null;
+                stop();
+                event.currentTarget.style.setProperty("--stick-x", "0px");
+                event.currentTarget.style.setProperty("--stick-y", "0px");
+              }}
             >
               <span />
             </div>
@@ -428,6 +465,8 @@ export default function Exploration({
                   onPointerDown={(event) => move(event, x, y)}
                   onPointerUp={stop}
                   onPointerCancel={stop}
+                  onLostPointerCapture={stop}
+                  onBlur={stop}
                   onKeyDown={(event) => {
                     if (["Enter", " "].includes(event.key)) {
                       event.preventDefault();
@@ -451,9 +490,9 @@ export default function Exploration({
               <kbd>E</kbd>
             </button>
           )}
-          {state.following && (
+          {state.guiding && (
             <span className="walking-state" role="status">
-              <Footprints size={15} /> A caminho… Use WASD ou o controle para mudar de direção.
+              <Footprints size={15} /> Trilha ativa. Use WASD, setas ou o controle para caminhar.
             </span>
           )}
         </>
@@ -464,6 +503,7 @@ export default function Exploration({
           friend={friend}
           activity={activity}
           target={target}
+          listMode={listMode}
           onClose={() => setDialogue(null)}
           onMission={() => {
             setDialogue(null);
@@ -476,6 +516,7 @@ export default function Exploration({
               setDialogue(null);
             }
           }}
+          finalSolved={finalSolved}
           onFinale={
             complete
               ? () => {

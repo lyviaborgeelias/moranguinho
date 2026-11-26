@@ -60,7 +60,7 @@ test("convites da entrada levam direto à investigação", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /Começar investigação/ }).click();
   await expect(page).toHaveURL(/\/aventura$/);
-  await expect(page.getByRole("button", { name: "Seguir até Laranjinha" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mostrar caminho até Laranjinha" })).toBeVisible();
 
   await page.goto("/");
   await page.getByRole("link", { name: /MISSÃO 01/ }).click();

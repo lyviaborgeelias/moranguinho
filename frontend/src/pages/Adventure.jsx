@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -18,6 +18,10 @@ import {
 import { Link, useSearchParams } from "react-router-dom";
 import Logo, { StrawberryMark } from "../components/Logo";
 import Modal from "../components/Modal";
+import ClueOrder from "../components/ClueOrder";
+import FinalRiddle from "../components/FinalRiddle";
+import GeoLocation from "../components/GeoLocation";
+import { readLocal, writeLocal, clearLocalJourney, orderedClues } from "../services/progress";
 import Challenge from "../components/Challenge";
 import { Certificate, Finale } from "../components/Finale";
 import { useAuth } from "../context/AuthContext";
@@ -30,6 +34,7 @@ import "../styles/Adventure.css";
 import "../styles/Challenge.css";
 import "../styles/Exploration.css";
 import "../styles/QuestPolish.css";
+import "../styles/Completion.css";
 
 const views = [
   { id: "world", label: "Explorar", icon: Footprints },
@@ -102,7 +107,17 @@ export default function Adventure() {
   const { user, updateUser } = useAuth();
   const [params, setParams] = useSearchParams();
   const view = views.some((item) => item.id === params.get("aba")) ? params.get("aba") : "world";
-  const [journey, setJourney] = useState(null);
+  const [journey, setJourneyState] = useState(() => readLocal("journey"));
+  const [order, setOrderState] = useState(() => readLocal("order", []));
+  const [online, setOnline] = useState(() => navigator.onLine);
+  const setJourney = useCallback((data) => {
+    writeLocal("journey", data);
+    setJourneyState(data);
+  }, []);
+  function setOrder(value) {
+    writeLocal("order", value);
+    setOrderState(value);
+  }
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
   const [missionId, setMissionId] = useState(null);
@@ -112,11 +127,15 @@ export default function Adventure() {
   const [reset, setReset] = useState(false);
   const [resetBusy, setResetBusy] = useState(false);
   const [ending, setEnding] = useState(null);
+  const newGameHandled = useRef(false);
   const selected = journey?.activities.find(
     (item) => item.id === missionId && item.status !== "locked",
   );
-  const complete = journey?.completed.length === 6;
-  const next = journey?.activities.find((activity) => activity.status === "available");
+  const allClues = journey?.completed.length === 6;
+  const complete = Boolean(journey?.finished_at);
+  const next = journey?.activities.find((activity) =>
+    ["available", "in_progress"].includes(activity.status),
+  );
   const closeActivity = useCallback(() => setMissionId(null), []);
 
   const load = useCallback(async () => {
@@ -126,14 +145,41 @@ export default function Adventure() {
       const { data } = await api.get("/journey/");
       setJourney(data);
     } catch (requestError) {
-      setError(errorMessage(requestError));
+      setError(
+        readLocal("journey")
+          ? "Modo offline: progresso local disponível. Conecte-se para validar respostas."
+          : errorMessage(requestError),
+      );
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [setJourney]);
   useEffect(() => {
     load();
+    const connected = () => {
+      setOnline(true);
+      load();
+    };
+    const disconnected = () => setOnline(false);
+    window.addEventListener("online", connected);
+    window.addEventListener("offline", disconnected);
+    return () => {
+      window.removeEventListener("online", connected);
+      window.removeEventListener("offline", disconnected);
+    };
   }, [load]);
+
+  useEffect(() => {
+    if (!busy && journey && params.get("novo") === "1" && !newGameHandled.current) {
+      newGameHandled.current = true;
+      if (
+        journey.completed.length ||
+        journey.activities.some((item) => item.status === "in_progress")
+      )
+        setReset(true);
+      setParams({}, { replace: true });
+    }
+  }, [busy, journey, params, setParams]);
 
   function tab(id) {
     setParams(id === "world" ? {} : { aba: id });
@@ -145,13 +191,52 @@ export default function Adventure() {
     setFollowRequest((current) => ({ id: activity.id, version: (current?.version || 0) + 1 }));
   }
   function openFinale() {
+    if (!allClues) return;
     setMissionId(null);
+    setEnding(complete ? "party" : "riddle");
+  }
+  async function startMission(id) {
+    const activity = journey.activities.find((item) => item.id === id);
+    if (!activity || activity.status === "locked") return;
+    setMissionId(id);
+    if (activity.status !== "available") return;
+    const local = {
+      ...journey,
+      activities: journey.activities.map((item) =>
+        item.id === id ? { ...item, status: "in_progress", clue_status: "incomplete" } : item,
+      ),
+    };
+    setJourney(local);
+    if (online) {
+      try {
+        const { data } = await api.post(`/activities/${id}/start/`);
+        setJourneyState((current) => {
+          // Do not replace a newer quiz completion if the start request resolves late.
+          if (
+            current.started_at !== data.started_at ||
+            current.completed.length > data.completed.length ||
+            current.attempts > data.attempts ||
+            current.finished_at
+          )
+            return current;
+          writeLocal("journey", data);
+          return data;
+        });
+      } catch {
+        /* Local in-progress state is retained; submission is validated by the API. */
+      }
+    }
+  }
+  function solved(data) {
+    setJourney(data);
     setEnding("party");
   }
   async function restart() {
     setResetBusy(true);
     try {
       const { data } = await api.delete("/journey/", { data: { confirm: true } });
+      clearLocalJourney();
+      setOrder([]);
       setJourney(data);
       setMissionId(null);
       setFollowRequest(null);
@@ -201,12 +286,26 @@ export default function Adventure() {
             <i style={{ width: `${journey?.percent || 0}%` }} />
           </div>
           <small>{journey?.completed.length || 0} / 6 fases</small>
+          <span className="save-indicator" role="status">
+            <span className={`status-dot ${!online || error ? "status-dot--offline" : ""}`} />
+            {!online || error
+              ? "Offline · cópia local"
+              : busy
+                ? "Carregando…"
+                : "Online · jornada salva"}
+          </span>
         </div>
         <div className="game-tools">
-          <span className="save-indicator" role="status">
-            <span className="status-dot" />
-            {busy ? "Carregando…" : error ? "Sem conexão" : "Jornada salva"}
-          </span>
+          {error && journey && (
+            <button
+              className="game-tool"
+              aria-label="Reconectar ao servidor"
+              title="Reconectar"
+              onClick={load}
+            >
+              <RotateCcw size={17} />
+            </button>
+          )}
           <button
             className="game-tool"
             onClick={() => setInfo(true)}
@@ -228,11 +327,12 @@ export default function Adventure() {
             paused={view !== "world" || Boolean(selected) || info || reset || Boolean(ending)}
             followRequest={followRequest}
             resetKey={resetKey}
-            onMission={setMissionId}
+            onMission={startMission}
+            finalSolved={complete}
             onFinale={openFinale}
           />
         )}
-        {error && (
+        {error && !journey && (
           <div className="world-error notice notice--error" role="alert">
             {error}
             <button className="button button--small button--outline" onClick={load}>
@@ -289,7 +389,10 @@ export default function Adventure() {
                         : "Uma história que se revela aos poucos."}
                     </h2>
                     <div className="fragment-strip">
-                      {journey.activities.map((activity) => (
+                      {[
+                        ...orderedClues(journey.activities, order),
+                        ...journey.activities.filter((item) => !item.fragment),
+                      ].map((activity) => (
                         <span
                           key={activity.id}
                           className={activity.fragment ? "" : "fragment-missing"}
@@ -300,6 +403,12 @@ export default function Adventure() {
                     </div>
                   </div>
                 </div>
+                <ClueOrder activities={journey.activities} order={order} onOrder={setOrder} />
+                {allClues && (
+                  <button className="button button--primary" onClick={openFinale}>
+                    {complete ? "Festa das amigas" : "Resolver enigma final"}
+                  </button>
+                )}
                 <div className="journal-grid journal-meetings">
                   {journey.activities.map((activity) => {
                     const Icon = destinationIcons[activity.icon];
@@ -318,19 +427,52 @@ export default function Adventure() {
                             <h2>{activity.friend ?? activity.title}</h2>
                           </div>
                         </header>
+                        <p className="clue-state">
+                          {
+                            {
+                              locked: "Pista bloqueada",
+                              incomplete: "Pista incompleta",
+                              complete: "Pista completa",
+                            }[activity.clue_status]
+                          }{" "}
+                          ·{" "}
+                          {
+                            {
+                              locked: "Bloqueado",
+                              available: "Disponível",
+                              in_progress: "Em andamento",
+                              completed: "Concluído",
+                            }[activity.status]
+                          }
+                        </p>
+                        {activity.treasure && activity.status !== "completed" && (
+                          <p>
+                            Tesouro encontrado: <strong>{activity.treasure}</strong>
+                          </p>
+                        )}
+                        {activity.clue_preview && <p>Pista parcial: {activity.clue_preview}</p>}
+                        <p className="quiz-state">
+                          {
+                            {
+                              unanswered: "Quiz não respondido",
+                              incorrect: "Quiz respondido incorretamente",
+                              correct: "Quiz respondido corretamente",
+                            }[activity.quiz_status]
+                          }
+                        </p>
                         <p>
                           {activity.status === "completed"
                             ? activity.revelation
-                            : activity.status === "available"
+                            : ["available", "in_progress"].includes(activity.status)
                               ? activity.story
                               : "Desbloqueie este encontro ao encontrar a pista anterior."}
                         </p>
                         {activity.fragment ? (
                           <span className="collected-fragment">
-                            {activity.fragment}
+                            {activity.fragment} · {activity.treasure}
                             <Check size={14} />
                           </span>
-                        ) : activity.status === "available" ? (
+                        ) : ["available", "in_progress"].includes(activity.status) ? (
                           <button className="text-action" onClick={() => open(activity)}>
                             Visitar {activity.friend} <ArrowRight size={14} />
                           </button>
@@ -356,30 +498,37 @@ export default function Adventure() {
                     <h2>{journey.xp} pontos de exploração.</h2>
                     <p>
                       {
-                        achievements.filter((item) => journey.completed.length >= item.threshold)
-                          .length
+                        achievements.filter(
+                          (item) =>
+                            journey.completed.length >= item.threshold &&
+                            (item.id !== "guardian" || complete),
+                        ).length
                       }{" "}
                       de {achievements.length} conquistas desbloqueadas · {journey.attempts}{" "}
                       tentativas na jornada
                     </p>
                   </div>
-                  {complete && (
+                  {allClues && (
                     <div className="achievement-actions">
                       <button className="button button--primary" onClick={openFinale}>
-                        Festa das amigas <Trophy size={16} />
+                        {complete ? "Festa das amigas" : "Resolver enigma final"}{" "}
+                        <Trophy size={16} />
                       </button>
-                      <button
-                        className="button button--outline"
-                        onClick={() => setEnding("certificate")}
-                      >
-                        Meu certificado <Download size={16} />
-                      </button>
+                      {complete && (
+                        <button
+                          className="button button--outline"
+                          onClick={() => setEnding("certificate")}
+                        >
+                          Meu certificado <Download size={16} />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
                 <div className="achievement-grid">
                   {achievements.map(({ id, title, text, threshold, icon: Icon }) => {
-                    const unlocked = journey.completed.length >= threshold;
+                    const unlocked =
+                      journey.completed.length >= threshold && (id !== "guardian" || complete);
                     return (
                       <article
                         key={id}
@@ -411,7 +560,12 @@ export default function Adventure() {
                 </div>
               </>
             )}
-            {view === "profile" && <Profile user={user} updateUser={updateUser} />}
+            {view === "profile" && (
+              <>
+                <Profile user={user} updateUser={updateUser} />
+                <GeoLocation />
+              </>
+            )}
 
             {view === "profile" && (
               <button className="restart-journey" onClick={() => setReset(true)}>
@@ -452,7 +606,9 @@ export default function Adventure() {
           onClose={closeActivity}
           onUpdate={setJourney}
           onNext={next ? () => open(next) : undefined}
-          onFinale={complete ? openFinale : undefined}
+          onFinale={allClues ? openFinale : undefined}
+          finalSolved={complete}
+          online={online}
         />
       )}
       {info && <GameGuide onClose={() => setInfo(false)} />}
@@ -472,17 +628,35 @@ export default function Adventure() {
             <button className="button button--outline" onClick={() => setReset(false)}>
               Manter minha jornada
             </button>
-            <button className="button button--primary" disabled={resetBusy} onClick={restart}>
+            <button
+              className="button button--primary"
+              disabled={resetBusy || !online}
+              onClick={restart}
+            >
               {resetBusy ? "Reiniciando…" : "Sim, reiniciar"}
             </button>
           </div>
         </Modal>
+      )}
+      {allClues && !complete && ending === "riddle" && (
+        <FinalRiddle
+          journey={journey}
+          order={order}
+          onOrder={setOrder}
+          onSolved={solved}
+          onClose={() => setEnding(null)}
+          online={online}
+        />
       )}
       {complete && ending === "party" && (
         <Finale
           journey={journey}
           onClose={() => setEnding(null)}
           onCertificate={() => setEnding("certificate")}
+          onRestart={() => {
+            setEnding(null);
+            setReset(true);
+          }}
         />
       )}
       {complete && ending === "certificate" && (

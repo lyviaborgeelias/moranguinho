@@ -1,0 +1,62 @@
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Found 26 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: corsheaders, messages, rest_framework, staticfiles
+  Apply all migrations: admin, api, auth, contenttypes, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying api.0001_initial... OK
+  Applying api.0002_activityprogress_answers_activityprogress_started_at_and_more... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying sessions.0001_initial...test_all_six_challenges_unlock_final_riddle_only (api.tests.JourneyTests.test_all_six_challenges_unlock_final_riddle_only) ... ok
+test_answers_cannot_be_swapped_between_questions (api.tests.JourneyTests.test_answers_cannot_be_swapped_between_questions) ... ok
+test_catalog_does_not_expose_answers_or_unearned_fragments (api.tests.JourneyTests.test_catalog_does_not_expose_answers_or_unearned_fragments) ... ok
+test_duplicate_email_is_case_insensitive (api.tests.JourneyTests.test_duplicate_email_is_case_insensitive) ... ok
+test_each_friend_has_two_questions_with_valid_correct_options (api.tests.JourneyTests.test_each_friend_has_two_questions_with_valid_correct_options) ... ok
+test_final_cannot_be_accessed_early (api.tests.JourneyTests.test_final_cannot_be_accessed_early) ... ok
+test_final_validates_order_and_restart_clears_completion (api.tests.JourneyTests.test_final_validates_order_and_restart_clears_completion) ... ok
+test_inactive_user_cannot_login (api.tests.JourneyTests.test_inactive_user_cannot_login) ... ok
+test_invalid_registration_is_rejected (api.tests.JourneyTests.test_invalid_registration_is_rejected) ... ok
+test_journey_allows_guest_without_login (api.tests.JourneyTests.test_journey_allows_guest_without_login) ... ok
+test_later_missions_reject_malformed_answers (api.tests.JourneyTests.test_later_missions_reject_malformed_answers) ... ok
+test_localhost_cors_preflight (api.tests.JourneyTests.test_localhost_cors_preflight) ... ok
+test_locked_activity_cannot_be_skipped (api.tests.JourneyTests.test_locked_activity_cannot_be_skipped) ... ok
+test_login_accepts_normalized_email_and_ignores_stale_token (api.tests.JourneyTests.test_login_accepts_normalized_email_and_ignores_stale_token) ... ok
+test_password_change_checks_current_password (api.tests.JourneyTests.test_password_change_checks_current_password) ... ok
+test_profile_name_update (api.tests.JourneyTests.test_profile_name_update) ... ok
+test_progress_is_isolated_by_user (api.tests.JourneyTests.test_progress_is_isolated_by_user) ... ok
+test_questions_reject_malformed_or_incomplete_answers (api.tests.JourneyTests.test_questions_reject_malformed_or_incomplete_answers) ... ok
+test_refresh_returns_new_access (api.tests.JourneyTests.test_refresh_returns_new_access) ... ok
+test_registration_hashes_password_and_returns_session (api.tests.JourneyTests.test_registration_hashes_password_and_returns_session) ... ok
+test_replay_does_not_award_duplicate_points (api.tests.JourneyTests.test_replay_does_not_award_duplicate_points) ... ok
+test_reset_email_link_and_single_use_token (api.tests.JourneyTests.test_reset_email_link_and_single_use_token) ... ok
+test_restart_requires_confirmation_and_keeps_user (api.tests.JourneyTests.test_restart_requires_confirmation_and_keeps_user) ... ok
+test_start_marks_in_progress_and_blocks_future (api.tests.JourneyTests.test_start_marks_in_progress_and_blocks_future) ... ok
+test_treasure_and_answers_are_persisted (api.tests.JourneyTests.test_treasure_and_answers_are_persisted) ... ok
+test_wrong_answer_does_not_award_progress (api.tests.JourneyTests.test_wrong_answer_does_not_award_progress) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 0.199s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+ OK
+System check identified no issues (0 silenced).

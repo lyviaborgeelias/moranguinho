@@ -35,3 +35,6 @@ backend/backups/
 *.sqlite3-shm
 frontend/test-results/
 frontend/playwright-report/
+
+# Banco local (migrate cria um novo; não publique dados pessoais)
+backend/db.sqlite3
