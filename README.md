@@ -1,4 +1,4 @@
-# 🍓 Segredos de Tutti-Frutti — Caça ao Tesouro
+# Segredos de Tutti-Frutti — Caça ao Tesouro
 
 **SENAI Roberto Mange | Front-end — Atividade Somativa**
 
